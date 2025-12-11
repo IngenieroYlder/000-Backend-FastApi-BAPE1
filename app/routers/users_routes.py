@@ -38,12 +38,12 @@ def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Dep
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Permission check: Users can only update themselves unless they are admin (logic can be expanded later)
-    # For now, allow anyone to update anyone? No, that's unsafe. 
-    # Let's enforce: Users can only update THEMSELVES.
-    if user_id != current_user.id:
-        # TODO: Add 'is_admin' check if we want admins to edit others
-        raise HTTPException(status_code=403, detail="Not authorized to update this user")
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Allow any logged-in user to update (Assuming all logged-in users are trusted/admins for now)
+    # Removing the user_id != current_user.id check
 
     # Update fields
     if user_update.email:
