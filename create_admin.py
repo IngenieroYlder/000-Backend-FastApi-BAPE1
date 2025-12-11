@@ -11,18 +11,18 @@ def create_admin():
         # Check if user exists
         existing_user = db.query(User).filter(User.email == email).first()
         if existing_user:
-            print(f"User {email} already exists.")
+            print(f"El usuario {email} ya existe.")
             return
 
         # Create user
         new_user = User(email=email, password_hash=get_password_hash(password))
         db.add(new_user)
         db.commit()
-        print(f"User created successfully!")
+        print(f"El usuario {email} se ha creado exitosamente!")
         print(f"Email: {email}")
         print(f"Password: {password}")
     except Exception as e:
-        print(f"Error creating user: {e}")
+        print(f"Error al crear el usuario: {e}")
     finally:
         db.close()
 

@@ -108,3 +108,22 @@ Easypanel descargará el nuevo código, reconstruirá el contenedor y reiniciar�
 *   **Error "users relation does not exist"**: No has ejecutado las migraciones. Ve al paso 3.
 *   **Login Error (bcrypt/passlib)**: Revisa que `requirements.txt` tenga `bcrypt==4.0.1` y reconstruye.
 *   **Service not reachable**: Revisa que el comando de inicio use `--port 80`.
+
+---
+
+## 5. Glosario de Tecnologías y Librerías
+
+Este es el "motor" del proyecto. Aquí explicamos qué hace cada pieza y por qué es necesaria:
+
+| Librería / Herramienta | ¿Para qué sirve? | ¿Por qué la necesitamos? |
+| :--- | :--- | :--- |
+| **FastAPI** | El Framework principal. | Es el chasis del auto. Permite crear la API rápida, moderna y con documentación automática (Swagger). |
+| **Uvicorn** | Servidor Web (ASGI). | Es el motor que "corre" FastAPI. Sin él, FastAPI es solo código estático; Uvicorn lo pone en vivo en internet. |
+| **SQLAlchemy** | ORM (Gestor de Base de Datos). | Traduce código Python a SQL. Nos permite usar `db.query(User)` en lugar de escribir `SELECT * FROM users`. |
+| **Psycopg2-binary** | Driver de PostgreSQL. | Es el adaptador físico. Permite que SQLAlchemy (Python) hable el idioma de PostgreSQL. |
+| **Alembic** | Gestor de Migraciones. | Control de versiones para la BD. Si cambias un modelo, Alembic le dice a la BD cómo actualizarse sin borrar datos. |
+| **Python-Jose** | Manejo de Tokens JWT. | Genera y lee los "pases de acceso" (Tokens) para que el login sea seguro y persistente. |
+| **Passlib & Bcrypt** | Hashing de Contraseñas. | **Seguridad crítica**. Nunca guardamos claves en texto plano. Estas librerías las encriptan. *Nota: Tuvimos que fijar versiones por un bug reciente.* |
+| **Python-Dotenv** | Variables de Entorno. | Lee el archivo `.env`. Permite tener claves secretas en local sin subirlas al código fuente de GitHub. |
+| **Jinja2** | Motor de Plantillas HTML. | Permite insertar datos dinámicos (como el nombre de usuario) dentro de tus archivos HTML del frontend simple. |
+| **Python-Multipart** | Procesamiento de Formularios. | Necesario para que el Login (que envía datos como formulario) funcione en FastAPI. |
