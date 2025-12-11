@@ -1,116 +1,110 @@
-# Guía de Despliegue con Docker (VPS)
+# Guía Maestra de Despliegue en Easypanel (VPS)
 
-## Prerrequisitos
-1.  Servidor VPS (Ubuntu/Debian recomendado) con acceso SSH.
-2.  Docker instalado en el VPS.
-3.  Docker Compose instalado (opcional, pero recomendado).
+Esta guía documenta el **proceso exacto y probado** para desplegar el Backend BAPE en Easypanel, incluyendo las soluciones a problemas de compatibilidad y puertos.
 
-## Paso 1: Preparar los Archivos
-Asegúrate de tener los siguientes archivos en tu carpeta del proyecto:
-- `Dockerfile`
-- `requirements.txt`
-- `.env` (¡No subas tus secretos a repositorios públicos!)
-- Carpeta `app/`
+## 1. Preparación Local (Antes de subir)
 
-## Paso 2: Crear el Dockerfile
-Si no lo tienes, crea un archivo llamado `Dockerfile` en la raíz:
+### A. Dependencias Críticas (`requirements.txt`)
+Para evitar errores de compatibilidad en el servidor (como el de `passlib` vs `bcrypt`), tu archivo `requirements.txt` debe tener versiones fijas:
 
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Instalar dependencias del sistema requeridas para psycopg2 y otros
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-# Exponer el puerto
-EXPOSE 8000
-
-# Comando para iniciar la app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```text
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+alembic
+python-jose[cryptography]
+passlib[bcrypt]==1.7.4  <-- IMPORTANTE
+bcrypt==4.0.1           <-- IMPORTANTE (Versiones nuevas rompen el login)
+python-dotenv
+jinja2
+python-multipart
+email-validator
 ```
 
-## Paso 3: Construir la Imagen
-Desde la raíz de tu proyecto, ejecuta:
+### B. Git
+Tu proyecto debe estar en un repositorio (GitHub/GitLab).
+1.  `git add .`
+2.  `git commit -m "Mensaje"`
+3.  `git push origin master`
+
+---
+
+## 2. Configuración en Easypanel
+
+### A. Crear los Servicios
+Necesitas dos servicios separados en tu proyecto de Easypanel:
+1.  **Base de Datos**: Tipo `PostgreSQL` (versión 15 o similar).
+2.  **Aplicación Web**: Tipo `App` (Conecta tu repositorio de GitHub).
+
+### B. Configurar la App (Backend)
+En el servicio de tu App, ve a la pestaña **Environment (Variables de Entorno)** y configura:
+
+```ini
+# Conexión a la BD (Copia estos datos de tu servicio Postgres en Easypanel)
+POSTGRES_HOST=nombre_interno_servicio_db  (ej: n8n_bape)
+POSTGRES_PORT=5432
+POSTGRES_USER=tu_usuario_db
+POSTGRES_PASSWORD=tu_contraseña_db
+POSTGRES_DB=BAPE_BD
+
+# Seguridad
+SECRET_KEY=tu_clave_secreta_inventada
+
+# Puerto (Opcional, pero buena práctica)
+PORT=80
+```
+
+### C. El Comando de Inicio (CRÍTICO) ⚠️
+Por defecto, Dockerfile usa el puerto 8000, pero **Easypanel espera tráffico en el puerto 80** para el proxy SSL.
+Debes ir a la pestaña **General** -> **Build / Run Command** y sobrescribir el comando:
 
 ```bash
-docker build -t bape-backend .
+uvicorn app.main:app --host 0.0.0.0 --port 80
 ```
+*Sin esto, recibirás errores de "Service not reachable" o "502 Bad Gateway".*
 
-Si estás en Windows y vas a subirlo a un VPS Linux, es mejor subir los archivos y construir allá, o usar un registro de imágenes (Docker Hub).
+---
 
-### Opción A: Construir directamente en el VPS
-1.  Sube tus archivos al VPS (usando SCP o Git).
+## 3. Primer Despliegue e Inicialización
+
+1.  Dale al botón **"Deploy" (Implementar)**.
+2.  Espera a que salga el check verde (Running).
+
+### Inicializar Base de Datos (Solo la primera vez)
+La base de datos se crea vacía. Debes crear las tablas y el usuario administrador manualmente.
+
+1.  Ve a la pestaña **Console** de tu servicio App.
+2.  **Crear Tablas**: Ejecuta el comando de migraciones.
     ```bash
-    scp -r "d:\Colombia Picture\n8n agente ia burbuja\000 Backend FastApi BAPE" usuario@tu-vps-ip:/home/usuario/bape-backend
+    alembic upgrade head
     ```
-2.  Conéctate por SSH y navega a la carpeta.
-3.  Ejecuta `docker build -t bape-backend .`
+    *Si falla o no hace nada, usa el plan B: `python -m app.init_db`*
 
-## Paso 4: Ejecutar el Contenedor
+3.  **Crear Admin**: Ejecuta el script de creación.
+    ```bash
+    python create_admin.py
+    ```
+    *(Crea usuario: admin@bape.com / contraseña: admin)*
 
-Para ejecutarlo conectándose a tu base de datos PostgreSQL local (host):
+---
 
-```bash
-docker run -d \
-  --name bape-api \
-  -p 8000:8000 \
-  -e POSTGRES_HOST=host.docker.internal \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=admin \
-  -e POSTGRES_DB=BAPE_BD \
-  bape-backend
-```
-*Nota: `host.docker.internal` funciona en Windows/Mac. En Linux puede requerir `--add-host=host.docker.internal:host-gateway`.*
+## 4. Flujo de Trabajo (Actualizaciones)
 
-### Mejor Opción: Docker Compose (App + DB)
-Crea un archivo `docker-compose.yml`:
+Cada vez que quieras modificar el código:
 
-```yaml
-version: '3.8'
+1.  **En tu PC local**:
+    *   Edita tu código.
+    *   Guarda cambios: `git commit -am "Nueva funcionalidad"`
+    *   Sube cambios: `git push`
+2.  **En Easypanel**:
+    *   Ve a tu servicio App.
+    *   Presiona **"Deploy"**.
 
-services:
-  db:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=BAPE_BD
-    ports:
-      - "5432:5432"
+Easypanel descargará el nuevo código, reconstruirá el contenedor y reiniciará el servicio sin perder tus datos de la base de datos (porque está en otro servicio).
 
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=BAPE_BD
-      - SECRET_KEY=tu_clave_secreta_super_segura
-    depends_on:
-      - db
+### Solución de Problemas Comunes
 
-volumes:
-  postgres_data:
-```
-
-Para correr todo:
-```bash
-docker-compose up -d --build
-```
-
-## Paso 5: Verificar
-Visita `http://<tu-vps-ip>:8000/docs` para ver la documentación automática de Swagger y verificar que el servidor está corriendo.
+*   **Error "users relation does not exist"**: No has ejecutado las migraciones. Ve al paso 3.
+*   **Login Error (bcrypt/passlib)**: Revisa que `requirements.txt` tenga `bcrypt==4.0.1` y reconstruye.
+*   **Service not reachable**: Revisa que el comando de inicio use `--port 80`.
