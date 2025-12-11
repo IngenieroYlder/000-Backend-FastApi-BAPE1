@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: bape_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=BAPE_BD
+    ports:
+      - "5432:5432"
+    restart: always
+
+  api:
+    build: .
+    container_name: bape_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=BAPE_BD
+      - SECRET_KEY=changethis_to_a_secure_random_string
+      # Override the host to point to the db service name
+      - POSTGRES_HOST=db
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:

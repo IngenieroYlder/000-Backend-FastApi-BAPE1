@@ -1,0 +1,62 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+from app import models, schemas, auth
+from app.database import get_db
+
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"]
+)
+
+@router.get("/", response_model=List[schemas.User])
+def get_users(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    # Optional: Check if current_user is admin
+    users = db.query(models.User).all()
+    return users
+
+@router.post("/", response_model=schemas.User)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed_password = auth.get_password_hash(user.password)
+    new_user = models.User(
+        email=user.email,
+        password_hash=hashed_password,
+        is_active=True
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent deleting oneself
+    if db_user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+
+    db.delete(db_user)
+    db.commit()
+    return None
+
+@router.put("/{user_id}/status", response_model=schemas.User)
+def toggle_user_status(user_id: int, is_active: bool, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Prevent disabling oneself
+    if db_user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot disable your own account")
+
+    db_user.is_active = is_active
+    db.commit()
+    db.refresh(db_user)
+    return db_user
