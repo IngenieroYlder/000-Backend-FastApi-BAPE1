@@ -25,14 +25,14 @@ def read_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 def read_product(product_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
     return product
 
 @router.put("/{product_id}", response_model=schemas.Product)
 def update_product(product_id: int, product_update: schemas.ProductUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
     
     for key, value in product_update.dict(exclude_unset=True).items():
         setattr(product, key, value)
@@ -45,7 +45,7 @@ def update_product(product_id: int, product_update: schemas.ProductUpdate, db: S
 def delete_product(product_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
     
     db.delete(product)
     db.commit()

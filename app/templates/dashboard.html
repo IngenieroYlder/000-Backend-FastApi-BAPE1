@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - BAPE</title>
-    <!-- Quill CSS -->
+    <!-- CSS de Quill -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <style>
         body {
@@ -16,7 +16,7 @@
             background-color: #f0f2f5;
         }
 
-        /* Sidebar Styling */
+        /* Estilo de la Barra Lateral */
         .sidebar {
             width: 260px;
             background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
@@ -66,14 +66,14 @@
             transform: none;
         }
 
-        /* Content Area */
+        /* Área de Contenido */
         .content {
             flex-grow: 1;
             padding: 2rem 3rem;
             overflow-y: auto;
         }
 
-        /* Container Limit for large screens */
+        /* Límite del contenedor para pantallas grandes */
         .main-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -91,7 +91,7 @@
             margin-bottom: 20px;
         }
 
-        /* Forms */
+        /* Formularios */
         .form-container {
             background: white;
             padding: 2rem;
@@ -134,7 +134,7 @@
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
 
-        /* Buttons */
+        /* Botones */
         .btn {
             padding: 10px 20px;
             border: none;
@@ -168,7 +168,7 @@
             display: none !important;
         }
 
-        /* Tables */
+        /* Tablas */
         .table-container {
             background: white;
             border-radius: 12px;
@@ -230,7 +230,7 @@
 
     <div class="content">
         <div class="main-container">
-            <!-- Products Section -->
+            <!-- Sección de Productos -->
             <div id="productsSection">
                 <h1>Gestión de Productos</h1>
                 <div class="form-container">
@@ -278,7 +278,7 @@
                 </div>
             </div>
 
-            <!-- Services Section -->
+            <!-- Sección de Servicios -->
             <div id="servicesSection" class="hidden">
                 <h1>Gestión de Servicios</h1>
                 <div class="form-container">
@@ -324,12 +324,12 @@
                 </div>
             </div>
 
-            <!-- Categories Section -->
+            <!-- Sección de Categorías -->
             <div id="categoriesSection" class="hidden">
                 <h1>Gestión de Categorías</h1>
 
                 <div class="form-row">
-                    <!-- Product Categories Column -->
+                    <!-- Columna de Categorías de Productos -->
                     <div
                         style="flex: 1; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                         <h4>Categorías de Productos</h4>
@@ -349,7 +349,7 @@
                         </table>
                     </div>
 
-                    <!-- Service Categories Column -->
+                    <!-- Columna de Categorías de Servicios -->
                     <div
                         style="flex: 1; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                         <h4>Categorías de Servicios</h4>
@@ -372,7 +372,7 @@
             </div>
 
 
-            <!-- Users Section -->
+            <!-- Sección de Usuarios -->
             <div id="usersSection" class="hidden">
                 <h1>Gestión de Usuarios</h1>
                 <div class="form-container">
@@ -404,7 +404,7 @@
                     </table>
                 </div>
 
-                <!-- Edit User Modal -->
+                <!-- Modal de Edición de Usuario -->
                 <div id="editUserModal" class="hidden"
                     style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
                     <div style="background: white; padding: 2rem; border-radius: 12px; width: 400px; max-width: 90%;">
@@ -441,7 +441,7 @@
 
 
 
-    <!-- Quill JS -->
+    <!-- JS de Quill -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
         const token = localStorage.getItem('token');
@@ -456,16 +456,16 @@
         var servQuill = new Quill('#servLongDescEditor', { theme: 'snow' });
 
         function showSection(sectionId) {
-            // Hide all sections
+            // Ocultar todas las secciones
             document.getElementById('productsSection').classList.add('hidden');
             document.getElementById('servicesSection').classList.add('hidden');
             document.getElementById('categoriesSection').classList.add('hidden');
             document.getElementById('usersSection').classList.add('hidden');
 
-            // Deactivate all menu items
+            // Desactivar todos los ítems del menú
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
-            // Show selected section and activate button
+            // Mostrar la sección seleccionada y activar el botón
             if (sectionId === 'products') {
                 document.getElementById('productsSection').classList.remove('hidden');
                 document.getElementById('btn-products').classList.add('active');
@@ -501,9 +501,9 @@
             return text.split(',').map(s => s.trim()).filter(s => s);
         }
 
-        // --- CATEGORIES ---
+        // --- CATEGORÍAS ---
         async function loadAllCatsList() {
-            // Product Cats
+            // Categorías de Productos
             const resP = await fetchAPI('/product-categories');
             if (resP.ok) {
                 const cats = await resP.json();
@@ -511,7 +511,7 @@
                 <tr><td>${c.id}</td><td>${c.name}</td><td><button class="btn btn-danger" onclick="deleteProdCat(${c.id})">X</button></td></tr>
                     `).join('');
             }
-            // Service Cats
+            // Categorías de Servicios
             const resS = await fetchAPI('/service-categories');
             if (resS.ok) {
                 const cats = await resS.json();
@@ -521,7 +521,7 @@
             }
         }
 
-        // Product Categories Logic
+        // Lógica de Categorías de Productos
         document.getElementById('prodCatForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = { name: document.getElementById('prodCatName').value };
@@ -532,7 +532,7 @@
             if (confirm('¿Seguro?')) { await fetchAPI(`/product-categories/${id}`, 'DELETE'); loadAllCatsList(); }
         }
 
-        // Service Categories Logic
+        // Lógica de Categorías de Servicios
         document.getElementById('servCatForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = { name: document.getElementById('servCatName').value };
@@ -543,7 +543,7 @@
             if (confirm('¿Seguro?')) { await fetchAPI(`/service-categories/${id}`, 'DELETE'); loadAllCatsList(); }
         }
 
-        // Dropdowns Helpers
+        // Ayudantes de Desplegables
         async function loadProdCatsDropdown(selectId) {
             const res = await fetchAPI('/product-categories');
             if (res.ok) {
@@ -561,7 +561,7 @@
             }
         }
 
-        // --- PRODUCTS ---
+        // --- PRODUCTOS ---
         async function loadProducts() {
             const res = await fetchAPI('/products/');
             if (res.ok) {
@@ -612,7 +612,7 @@
             if (res.ok) loadProducts();
         }
 
-        // --- SERVICES ---
+        // --- SERVICIOS ---
         async function loadServices() {
             const res = await fetchAPI('/services/');
             if (res.ok) {
@@ -661,14 +661,14 @@
             if (res.ok) loadServices();
         }
 
-        // --- USERS ---
+        // --- USUARIOS ---
         let allUsers = [];
 
         async function loadUsers() {
             const res = await fetchAPI('/users/');
             if (res.ok) {
                 const users = await res.json();
-                allUsers = users; // Store for local access
+                allUsers = users; // Almacenar para acceso local
                 document.getElementById('usersTable').innerHTML = users.map(u => `
                     <tr>
                         <td>${u.id}</td>
@@ -712,7 +712,7 @@
             }
         });
 
-        // EDIT USER MODAL LOGIC
+        // LÓGICA DEL MODAL DE EDICIÓN DE USUARIO
         function openEditUserModal(userId) {
             const user = allUsers.find(u => u.id === userId);
             if (!user) return;
@@ -772,7 +772,7 @@
             }
         }
 
-        // Initial Load
+        // Carga Inicial
         loadProducts();
     </script>
 </body>

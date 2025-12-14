@@ -15,12 +15,15 @@ router = APIRouter(
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="El correo electrónico ya está registrado")
     
     hashed_password = auth.get_password_hash(user.password)
     new_user = models.User(
         email=user.email,
         password_hash=hashed_password,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        phone=user.phone,
         is_active=True
     )
     db.add(new_user)
@@ -34,7 +37,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     if not user or not auth.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Usuario o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

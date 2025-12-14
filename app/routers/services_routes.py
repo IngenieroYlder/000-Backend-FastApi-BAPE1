@@ -25,14 +25,14 @@ def read_services(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 def read_service(service_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     service = db.query(models.Service).filter(models.Service.id == service_id).first()
     if service is None:
-        raise HTTPException(status_code=404, detail="Service not found")
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
     return service
 
 @router.put("/{service_id}", response_model=schemas.Service)
 def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     service = db.query(models.Service).filter(models.Service.id == service_id).first()
     if service is None:
-        raise HTTPException(status_code=404, detail="Service not found")
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
     
     for key, value in service_update.dict(exclude_unset=True).items():
         setattr(service, key, value)
@@ -45,7 +45,7 @@ def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: S
 def delete_service(service_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     service = db.query(models.Service).filter(models.Service.id == service_id).first()
     if service is None:
-        raise HTTPException(status_code=404, detail="Service not found")
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
     
     db.delete(service)
     db.commit()

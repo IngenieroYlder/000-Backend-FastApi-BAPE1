@@ -13,7 +13,7 @@ router = APIRouter(
 def create_product_category(category: schemas.CategoryCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_cat = db.query(models.ProductCategory).filter(models.ProductCategory.name == category.name).first()
     if db_cat:
-        raise HTTPException(status_code=400, detail="Category already exists")
+        raise HTTPException(status_code=400, detail="La categoría ya existe")
     new_category = models.ProductCategory(**category.dict())
     db.add(new_category)
     db.commit()
@@ -28,7 +28,7 @@ def read_product_categories(skip: int = 0, limit: int = 100, db: Session = Depen
 def delete_product_category(category_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     category = db.query(models.ProductCategory).filter(models.ProductCategory.id == category_id).first()
     if category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
     db.delete(category)
     db.commit()
     return None
@@ -38,7 +38,7 @@ def delete_product_category(category_id: int, db: Session = Depends(get_db), cur
 def create_service_category(category: schemas.CategoryCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     db_cat = db.query(models.ServiceCategory).filter(models.ServiceCategory.name == category.name).first()
     if db_cat:
-        raise HTTPException(status_code=400, detail="Category already exists")
+        raise HTTPException(status_code=400, detail="La categoría ya existe")
     new_category = models.ServiceCategory(**category.dict())
     db.add(new_category)
     db.commit()
@@ -53,7 +53,7 @@ def read_service_categories(skip: int = 0, limit: int = 100, db: Session = Depen
 def delete_service_category(category_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     category = db.query(models.ServiceCategory).filter(models.ServiceCategory.id == category_id).first()
     if category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
     db.delete(category)
     db.commit()
     return None
