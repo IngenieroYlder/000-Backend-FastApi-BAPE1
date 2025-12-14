@@ -68,7 +68,7 @@ Para no pegar el token en cada petición:
     }
     ```
 
-### C. Editar Usuario (Tu nueva función)
+### C. Editar Usuario
 *   **Método**: `PUT`
 *   **URL**: `{{base_url}}/users/{ID_DEL_USUARIO}`
 *   **Body** (`raw` -> `JSON`):

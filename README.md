@@ -82,6 +82,7 @@ El proyecto incluye un `Dockerfile` optimizado.
 
 - `POST /auth/register`: Registrar usuario.
 - `POST /auth/login`: Obtener Token JWT.
+- `GET /users`: Listar usuarios (Requiere Auth).
 - `GET /products`: Listar productos (Requiere Auth).
 - `POST /products`: Crear producto (Requiere Auth).
 - `GET /services`: Listar servicios (Requiere Auth).
@@ -89,6 +90,9 @@ El proyecto incluye un `Dockerfile` optimizado.
 - `GET /service-categories`: Listar categorías de servicios.
 - `GET /login`: Ver página de login.
 - `GET /dashboard`: Ver panel de administración.
+- `GET /users/{id}`: Ver detalles de un usuario (Requiere Auth).
+- `PUT /users/{id}`: Editar un usuario (Requiere Auth).
+- `DELETE /users/{id}`: Borrar un usuario (Requiere Auth).
 
 ## Notas Adicionales
 - Se han separado las categorías en dos tablas: `product_categories` y `service_categories`.
