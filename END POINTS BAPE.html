@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endpoints BAPE</title>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #39a900;
+            /* Verde SENA */
+            --secondary-color: #00324d;
+            /* Azul oscuro corporativo */
+            --text-color: #333;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --method-get: #61affe;
+            --method-post: #49cc90;
+            --method-put: #fca130;
+            --method-delete: #f93e3e;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
+            background-size: 20px 20px;
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text-color);
+            padding: 2rem;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 1rem;
+            text-align: center;
+        }
+
+        .header img {
+            width: 80px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            font-size: 1.8rem;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        h2 {
+            border-left: 5px solid var(--primary-color);
+            padding-left: 15px;
+            color: var(--secondary-color);
+            margin-top: 2.5rem;
+            font-size: 1.4rem;
+        }
+
+        .endpoint-card {
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .endpoint-card:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border-color: #ccc;
+        }
+
+        .endpoint-header {
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            background-color: #f9f9f9;
+            border-bottom: 1px solid #ebebeb;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .method {
+            font-weight: 700;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .method.get {
+            background-color: var(--method-get);
+        }
+
+        .method.post {
+            background-color: var(--method-post);
+        }
+
+        .method.put {
+            background-color: var(--method-put);
+        }
+
+        .method.delete {
+            background-color: var(--method-delete);
+        }
+
+        .url {
+            font-family: 'Consolas', monospace;
+            color: #555;
+            font-size: 0.95rem;
+            flex-grow: 1;
+        }
+
+        .desc {
+            font-size: 0.9rem;
+            color: #666;
+            margin-left: auto;
+        }
+
+        .endpoint-body {
+            padding: 1rem;
+            background-color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .endpoint-body pre {
+            background-color: #2d2d2d;
+            color: #ccc;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+            font-family: 'Consolas', monospace;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: #999;
+            text-align: center;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/1200px-Sena_Colombia_logo.svg.png"
+                alt="Logo SENA">
+            <h1>Documentación de Endpoints BAPE</h1>
+            <p style="color: #666;">Guía rápida de consumo de API</p>
+        </div>
+
+        <!-- AUTH -->
+        <h2><i class="fas fa-key"></i> Autenticación</h2>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="url">/auth/login</span>
+                <span class="desc">Iniciar Sesión</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Obtener Token de Acceso (JWT).</p>
+                <strong>Body (x-www-form-urlencoded):</strong>
+                <pre>username: admin@bape.com
+password: admin</pre>
+            </div>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="url">/auth/register</span>
+                <span class="desc">Registro</span>
+            </div>
+            <div class="endpoint-body">
+                <p>Registrar un nuevo usuario público.</p>
+                <strong>JSON Body:</strong>
+                <pre>{
+  "email": "user@example.com",
+  "password": "securePass",
+  "first_name": "Nombre",
+  "last_name": "Apellido",
+  "phone": "3001234567"
+}</pre>
+            </div>
+        </div>
+
+        <!-- USERS -->
+        <h2><i class="fas fa-users"></i> Usuarios</h2>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="url">/users/</span>
+                <span class="desc">Listar Usuarios</span>
+            </div>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="url">/users/</span>
+                <span class="desc">Crear Usuario</span>
+            </div>
+            <div class="endpoint-body">
+                <strong>JSON Body:</strong>
+                <pre>{
+  "email": "nuevo@test.com",
+  "password": "123",
+  "first_name": "Juan",
+  "last_name": "Perez",
+  "phone": "3000000"
+}</pre>
+            </div>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method put">PUT</span>
+                <span class="url">/users/{id}</span>
+                <span class="desc">Actualizar Usuario</span>
+            </div>
+        </div>
+
+        <!-- PRODUCTS -->
+        <h2><i class="fas fa-box"></i> Productos</h2>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="url">/products/</span>
+                <span class="desc">Listar Productos</span>
+            </div>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="url">/products/</span>
+                <span class="desc">Crear Producto</span>
+            </div>
+            <div class="endpoint-body">
+                <strong>JSON Body:</strong>
+                <pre>{
+  "name": "Camiseta",
+  "price": 25.50,
+  "stock": 10,
+  "category_id": 1,
+  "image": "http://img.com/a.jpg",
+  "short_description": "Breve descripcion",
+  "long_description": "<strong>HTML permitido</strong>",
+  "gallery_images": ["http://img1.jpg", "http://img2.jpg"]
+}</pre>
+            </div>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method delete">DELETE</span>
+                <span class="url">/products/{id}</span>
+                <span class="desc">Eliminar Producto</span>
+            </div>
+        </div>
+
+        <!-- SERVICES -->
+        <h2><i class="fas fa-concierge-bell"></i> Servicios</h2>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="url">/services/</span>
+                <span class="desc">Listar Servicios</span>
+            </div>
+        </div>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="url">/services/</span>
+                <span class="desc">Crear Servicio</span>
+            </div>
+        </div>
+
+        <!-- CATEGORIES -->
+        <h2><i class="fas fa-tags"></i> Categorías</h2>
+
+        <div class="endpoint-card">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="url">/product-categories</span>
+                <span class="desc">Nueva Cat. Producto</span>
+            </div>
+            <div class="endpoint-body">
+                <pre>{ "name": "Nombre Categoria" }</pre>
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; 2025 Proyecto BAPE.
+            <br>
+        </div>
+    </div>
+
+</body>
+
+</html>
