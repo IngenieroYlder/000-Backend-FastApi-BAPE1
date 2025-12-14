@@ -96,5 +96,5 @@ El proyecto incluye un `Dockerfile` optimizado.
 
 ## Notas Adicionales
 - Se han separado las categorías en dos tablas: `product_categories` y `service_categories`.
-- Se han traducido los comentarios del código a español.
+
 
