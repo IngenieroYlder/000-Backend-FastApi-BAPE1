@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canales - BAPE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --text-color: #333;
+            --light-gray: #f5f6fa;
+            --border-color: #dcdde1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            position: fixed;
+            height: 100%;
+        }
+
+        .sidebar h2 { text-align: center; margin-bottom: 30px; color: white; }
+        .menu-item { 
+            padding: 12px 15px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            margin-bottom: 8px; 
+            text-decoration: none; 
+            color: #ecf0f1; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            font-weight: 500;
+        }
+        .menu-item:hover { background-color: var(--secondary-color); transform: translateX(5px); }
+        .menu-item.active { background-color: var(--accent-color); color: white; }
+        .btn-logout { margin-top: auto; background-color: #e74c3c; justify-content: center; }
+
+        .main-content { flex: 1; padding: 30px; margin-left: 250px; overflow-y: auto; }
+
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+        .btn-primary { background-color: var(--accent-color); color: white; }
+        .btn-primary:hover { background-color: #2980b9; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-outline { border: 1px solid var(--accent-color); color: var(--accent-color); background: transparent; }
+        .btn-outline:hover { background: var(--accent-color); color: white; }
+        
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        
+        .channel-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .channel-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .status-connected { background-color: #d4edda; color: #155724; }
+        .status-disconnected { background-color: #f8d7da; color: #721c24; }
+        .status-qr_ready { background-color: #fff3cd; color: #856404; }
+
+        .qr-container { display: flex; flex-direction: column; align-items: center; margin: 15px 0; border: 1px dashed #ddd; padding: 15px; border-radius: 8px; }
+        
+        /* Switch Toggle */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--accent-color); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>BAPE Panel</h2>
+        <a href="/inbox" class="menu-item"><i class="fas fa-inbox"></i> Bandeja</a>
+        <a href="/dashboard?section=products" class="menu-item"><i class="fas fa-box"></i> Productos</a>
+        <a href="/dashboard?section=services" class="menu-item"><i class="fas fa-concierge-bell"></i> Servicios</a>
+        <a href="/dashboard?section=categories" class="menu-item"><i class="fas fa-tags"></i> Categorías</a>
+        <a href="/dashboard?section=users" class="menu-item"><i class="fas fa-users-cog"></i> Usuarios</a>
+        <a href="/channels" class="menu-item active"><i class="fas fa-comments"></i> Canales</a>
+        <a href="/contacts" class="menu-item"><i class="fas fa-users"></i> Clientes</a>
+        <a href="/settings" class="menu-item"><i class="fas fa-cog"></i> Ajustes</a>
+        <div class="menu-item btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</div>
+    </div>
+
+    <div class="main-content">
+        <div class="header-actions">
+            <div>
+                <h1>Mis Canales</h1>
+                <p>Configura tus conexiones de WhatsApp y automatizaciones.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ Nueva Línea</button>
+        </div>
+
+        <div id="channels-grid" class="grid-container">
+            <!-- Cargado dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Canal -->
+    <div id="newChannelModal" class="modal">
+        <div class="modal-content">
+            <h2>Nueva Conexión</h2>
+            <div class="form-group">
+                <label>Alias (Ej: Ventas Principal)</label>
+                <input type="text" id="newChannelAlias" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Proveedor IA</label>
+                <select id="newChannelProvider" class="form-control">
+                    <option value="openai">OpenAI</option>
+                    <option value="groq">Groq</option>
+                    <option value="gemini">Gemini</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn" style="background:#eee" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="createChannel()">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Publicar Estado -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content">
+            <h2>Publicar en Estado</h2>
+            <p style="font-size: 13px; color: #666;">El texto se publicará en los estados de esta línea.</p>
+            <div class="form-group">
+                <textarea id="statusText" class="form-control" rows="4" placeholder="¿Qué quieres anunciar?"></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn" style="background:#eee" onclick="closeStatusModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="publishStatus()">Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        function logout() { localStorage.removeItem('token'); window.location.href = '/login'; }
+
+        async function fetchAPI(url, method = 'GET', body = null) {
+            const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+            const res = await fetch(url, options);
+            if (res.status === 401) window.location.href = '/login';
+            return res;
+        }
+
+        async function loadChannels() {
+            const res = await fetchAPI('/whatsapp/sessions');
+            if (res.ok) {
+                const channels = await res.json();
+                renderChannels(channels);
+            }
+        }
+
+        function renderChannels(channels) {
+            const container = document.getElementById('channels-grid');
+            container.innerHTML = '';
+            
+            channels.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'channel-card';
+                
+                let statusClass = 'status-disconnected';
+                let statusText = c.status;
+                const statusLower = (c.status || '').toLowerCase();
+
+                if (statusLower === 'connected') { 
+                    statusClass = 'status-connected'; 
+                    statusText = 'En Línea'; 
+                }
+                else if (statusLower === 'qr_ready') { 
+                    statusClass = 'status-qr_ready'; 
+                    statusText = 'Escanea QR'; 
+                }
+                else if (statusLower === 'initializing') {
+                    statusText = 'Iniciando...';
+                }
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div>
+                            <h3 style="margin:0">${c.alias}</h3>
+                            <small style="color:#777">IA: ${c.ai_provider}</small>
+                        </div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+
+                    ${statusLower === 'qr_ready' ? `
+                        <div class="qr-container">
+                            <div id="qrcode-${c.id}"></div>
+                            <small style="margin-top:10px">Usa WhatsApp para vincular</small>
+                        </div>
+                    ` : `
+                        <div style="padding: 20px; text-align: center; color: ${statusLower === 'connected' ? 'var(--success-color)' : '#999'}">
+                            <i class="fas ${statusLower === 'connected' ? 'fa-check-double' : 'fa-link-slash'} fa-3x"></i>
+                        </div>
+                    `}
+
+                    <div style="margin-top: auto;">
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background:#f9f9f9; border-radius: 8px;">
+                            <span style="font-size:13px">Bot Inteligente</span>
+                            <label class="switch">
+                                <input type="checkbox" ${c.is_bot_enabled ? 'checked' : ''} onchange="toggleBot(${c.id}, this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background:#f9f9f9; border-radius: 8px;">
+                            <span style="font-size:13px" title="Si falla un API (ej. sin saldo), intenta con otro">Rotación de APIs 🔄</span>
+                            <label class="switch">
+                                <input type="checkbox" ${c.ai_strategy === 'rotate_free' ? 'checked' : ''} onchange="toggleStrategy(${c.id}, this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; background:#f9f9f9; border-radius: 8px;">
+                            <span style="font-size:13px">Responder en Grupos</span>
+                            <label class="switch">
+                                <input type="checkbox" ${c.respond_to_groups ? 'checked' : ''} onchange="toggleGroups(${c.id}, this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            ${statusLower === 'connected' ? `
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <button class="btn btn-outline" onclick="openStatusModal(${c.id})"><i class="fas fa-bullhorn"></i> Estado</button>
+                                    <button class="btn" style="background:#f39c12; color:white" onclick="repairSession(${c.id})" title="Reparar errores de cifrado (Bad MAC) sin cerrar sesión"><i class="fas fa-wrench"></i> Reparar</button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <button class="btn" style="background:#e67e22; color:white" onclick="resetSession(${c.id})" title="Reiniciar sesión completa"><i class="fas fa-sync"></i> Reiniciar</button>
+                                    <button class="btn btn-danger" onclick="deleteChannel(${c.id})"><i class="fas fa-trash"></i> Borrar</button>
+                                </div>
+                            ` : `
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <button class="btn btn-primary" ${statusLower === 'initializing' ? 'disabled' : ''} onclick="initSession(${c.id})">
+                                        <i class="fas ${statusLower === 'initializing' ? 'fa-spinner fa-spin' : 'fa-plug'}"></i> 
+                                        ${statusLower === 'initializing' ? 'Iniciando' : 'Conectar'}
+                                    </button>
+                                    <button class="btn btn-danger" onclick="deleteChannel(${c.id})"><i class="fas fa-trash"></i> Borrar</button>
+                                </div>
+                            `}
+                        </div>
+                        ${statusLower === 'connected' ? `
+                            <div style="margin-top:10px; text-align:center">
+                                <button class="btn btn-danger btn-sm" style="width:100%" onclick="deleteChannel(${c.id})"><i class="fas fa-trash"></i> Eliminar Instancia</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+
+                if (c.status === 'qr_ready' && c.qr_code) {
+                    new QRCode(document.getElementById(`qrcode-${c.id}`), {
+                        text: c.qr_code, width: 140, height: 140
+                    });
+                }
+            });
+
+            if (channels.some(c => (c.status || '').toLowerCase() !== 'connected')) {
+                setTimeout(loadChannels, 5000);
+            }
+        }
+
+        async function createChannel() {
+            const alias = document.getElementById('newChannelAlias').value;
+            const provider = document.getElementById('newChannelProvider').value;
+            if (!alias) return alert('Alias es requerido');
+            const res = await fetchAPI(`/whatsapp/sessions?alias=${encodeURIComponent(alias)}&ai_provider=${provider}`, 'POST');
+            if (res.ok) { closeModal(); loadChannels(); }
+        }
+
+        async function initSession(id) {
+            await fetchAPI(`/whatsapp/sessions/${id}/init`, 'POST');
+            loadChannels();
+        }
+
+        async function toggleGroups(id, enabled) {
+            await fetchAPI(`/whatsapp/sessions/${id}/config?respond_to_groups=${enabled}`, 'PUT');
+        }
+
+        async function toggleBot(id, enabled) {
+            await fetchAPI(`/whatsapp/sessions/${id}/config?is_bot_enabled=${enabled}`, 'PUT');
+        }
+
+        async function toggleStrategy(id, enabled) {
+            const strategy = enabled ? 'rotate_free' : 'fixed';
+            await fetchAPI(`/whatsapp/sessions/${id}/config?ai_strategy=${strategy}`, 'PUT');
+        }
+
+        async function resetSession(id) {
+            if (!confirm('¿Deseas reiniciar la sesión? Se borrarán los archivos temporales y deberás escanear el QR si la conexión se pierde.')) return;
+            await fetchAPI(`/whatsapp/sessions/${id}/reset`, 'POST');
+            loadChannels();
+        }
+
+        async function repairSession(id) {
+            if (!confirm('¿Deseas intentar reparar la sesión? Esto eliminará archivos de seguridad corruptos pero INTENTARÁ mantener la conexión activa sin pedir QR.')) return;
+            await fetchAPI(`/whatsapp/sessions/${id}/repair`, 'POST');
+            loadChannels();
+        }
+
+        async function deleteChannel(id) {
+            if (!confirm('¿Deseas eliminar esta conexión?')) return;
+            await fetchAPI(`/whatsapp/sessions/${id}`, 'DELETE');
+            loadChannels();
+        }
+
+        let sessionForStatus = null;
+        function openStatusModal(id) { sessionForStatus = id; document.getElementById('statusModal').style.display = 'flex'; }
+        function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; document.getElementById('statusText').value = ''; }
+
+        async function publishStatus() {
+            const text = document.getElementById('statusText').value;
+            if (!text) return;
+            const res = await fetchAPI(`/whatsapp/sessions/${sessionForStatus}/status?text=${encodeURIComponent(text)}`, 'POST');
+            if (res.ok) { alert('Estado publicado'); closeStatusModal(); }
+        }
+
+        function openModal() { document.getElementById('newChannelModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('newChannelModal').style.display = 'none'; }
+
+        loadChannels();
+    </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
+sqlmodel
 psycopg2-binary
 alembic
 python-jose[cryptography]
@@ -10,3 +11,12 @@ python-dotenv
 jinja2
 python-multipart
 email-validator
+pdfplumber
+numpy
+fastembed
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+python-dateutil
+pyngrok
+google-generativeai

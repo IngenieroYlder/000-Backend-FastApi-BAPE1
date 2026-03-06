@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes - BAPE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --text-color: #333;
+            --light-gray: #f5f6fa;
+            --border-color: #dcdde1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+        }
+
+        /* Reuse Sidebar from Dashboard (Simplified copy for now, ideally extensive template inheritance) */
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        .sidebar h2 { text-align: center; margin-bottom: 30px; color: white; }
+        .menu-item { 
+            padding: 12px 15px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            margin-bottom: 8px; 
+            text-decoration: none; 
+            color: #ecf0f1; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            font-weight: 500;
+        }
+        .menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+        .menu-item:hover { 
+            background-color: var(--secondary-color); 
+            transform: translateX(5px);
+        }
+        .menu-item.active { 
+            background-color: var(--accent-color); 
+            color: white;
+        }
+        .btn-logout {
+            margin-top: auto;
+            background-color: #e74c3c;
+            justify-content: center;
+        }
+        .btn-logout:hover {
+            background-color: #c0392b;
+            transform: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #7f8c8d;
+            border-bottom: 2px solid transparent;
+            margin-right: 10px;
+        }
+
+        .tab.active {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        textarea.form-control {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        /* Upload Box */
+        .upload-box {
+            border: 2px dashed var(--border-color);
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .upload-box:hover {
+            border-color: var(--accent-color);
+        }
+
+        .branding-preview {
+            max-width: 100px;
+            max-height: 100px;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .alert {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>BAPE Panel</h2>
+        <a href="/inbox" class="menu-item">
+            <i class="fas fa-inbox"></i> Bandeja
+        </a>
+        <a href="/calendar" class="menu-item">
+            <i class="fas fa-calendar-alt"></i> Calendario
+        </a>
+        <a href="/dashboard?section=products" class="menu-item">
+            <i class="fas fa-box"></i> Productos
+        </a>
+        <a href="/dashboard?section=services" class="menu-item">
+            <i class="fas fa-concierge-bell"></i> Servicios
+        </a>
+        <a href="/dashboard?section=categories" class="menu-item">
+            <i class="fas fa-tags"></i> Categorías
+        </a>
+        <a href="/dashboard?section=users" class="menu-item">
+            <i class="fas fa-users-cog"></i> Usuarios
+        </a>
+        <a href="/channels" class="menu-item">
+            <i class="fas fa-comments"></i> Canales
+        </a>
+        <a href="/contacts" class="menu-item">
+            <i class="fas fa-users"></i> Clientes
+        </a>
+        <a href="/settings" class="menu-item active">
+            <i class="fas fa-cog"></i> Ajustes
+        </a>
+        <div class="menu-item btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="alert-box" style="position: sticky; top: 0; z-index: 1001;"></div>
+        <h1>Ajustes de Superadmin</h1>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('general')">General (Prompts)</div>
+            <div class="tab" onclick="showTab('branding')">Branding</div>
+            <div class="tab" onclick="showTab('integrations')">Integraciones</div>
+            <div class="tab" onclick="showTab('knowledge')">Fuente de Conocimiento</div>
+            <div class="tab" onclick="showTab('calendar')">Agenda/Citas</div>
+            <div id="tab-logs" class="tab" onclick="showTab('system-logs')" style="display: none; background: #2c3e50; color: #ecf0f1;">Logs de Sistema 🛠️</div>
+        </div>
+
+        <!-- GENERAl TAB -->
+        <div id="general" class="tab-content active">
+            <div class="card">
+                <h3>Prompt del Sistema</h3>
+                <div class="form-group">
+                    <label>Instrucciones Generales (System Prompt)</label>
+                    <textarea id="system_prompt" class="form-control" placeholder="Eres un asistente útil..."></textarea>
+                    <small>Define la personalidad y comportamiento base del bot.</small>
+                </div>
+                <div class="form-group">
+                    <label>Reglas de Oro (Límites)</label>
+                    <textarea id="golden_rules" class="form-control" style="background-color: #1e272e; color: #d2dae2;" placeholder="No inventar productos..."></textarea>
+                </div>
+                <button class="btn-primary" onclick="saveSettings(this)">Guardar Cambios</button>
+            </div>
+        </div>
+
+        <!-- BRANDING TAB -->
+        <div id="branding" class="tab-content">
+            <div class="card">
+                <h3>Identidad Visual</h3>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1; text-align: center;">
+                        <label>Logo Principal</label>
+                        <img id="preview_logo" src="" class="branding-preview" alt="Logo">
+                        <div class="upload-box" onclick="document.getElementById('file_logo').click()">
+                            <i class="fas fa-cloud-upload-alt"></i> Subir Logo
+                        </div>
+                        <input type="file" id="file_logo" hidden onchange="uploadBranding('logo')">
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <label>Icono Barra</label>
+                        <img id="preview_icon" src="" class="branding-preview" alt="Icon">
+                        <div class="upload-box" onclick="document.getElementById('file_icon').click()">
+                            <i class="fas fa-image"></i> Subir Icono
+                        </div>
+                        <input type="file" id="file_icon" hidden onchange="uploadBranding('icon')">
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <label>Favicon</label>
+                        <img id="preview_favicon" src="" class="branding-preview" alt="Favicon">
+                        <div class="upload-box" onclick="document.getElementById('file_favicon').click()">
+                            <i class="fas fa-globe"></i> Subir Favicon
+                        </div>
+                        <input type="file" id="file_favicon" hidden onchange="uploadBranding('favicon')">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INTEGRATIONS TAB -->
+        <div id="integrations" class="tab-content">
+            <div class="card">
+                <h3>Meta (Facebook/Instagram)</h3>
+                <div class="form-group">
+                    <label>Verify Token (Para Webhook)</label>
+                    <input type="text" id="verify_token" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Facebook Page ID</label>
+                    <input type="text" id="facebook_page_id" class="form-control">
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>OpenAI</h3>
+                <div class="form-group">
+                    <label>OpenAI API Key</label>
+                    <input type="password" id="openai_api_key" class="form-control" placeholder="sk-..." oninput="checkAudioStatus()">
+                    <small>Soporte oficial para <b>GPT-4o</b> y <b>Whisper-1</b> (Audio preciso).</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Groq</h3>
+                <div class="form-group">
+                    <label>Groq API Key</label>
+                    <input type="password" id="groq_api_key" class="form-control" placeholder="gsk_..." oninput="checkAudioStatus()">
+                    <small>Soporte ultra-rápido para <b>Llama 3</b> y <b>Whisper-v3</b> (Audio rápido).</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Google Gemini</h3>
+                <div class="form-group">
+                    <label>Gemini API Key</label>
+                    <input type="password" id="gemini_api_key" class="form-control" placeholder="AIzaSy..." oninput="checkAudioStatus()">
+                    <small>Soporte para <b>Gemini 1.5 Pro/Flash</b>. Ideal para ventanas de contexto grandes y uso gratuito (Tier Free).</small>
+                </div>
+            </div>
+            
+            <!-- Audio Status Indicator -->
+            <div id="audio-status" class="alert" style="display:none; margin-bottom: 20px;"></div>
+
+            <div class="card">
+                <h3>Telegram</h3>
+                <div class="form-group">
+                    <label>Bot Token</label>
+                    <input type="password" id="telegram_token" class="form-control">
+                </div>
+            </div>
+
+            <!-- SMTP Email Settings -->
+            <div class="card">
+                <h3>Configuración de Correo (SMTP)</h3>
+                <p>Necesario para enviar confirmaciones de citas.</p>
+                <div class="form-group">
+                    <label>Servidor SMTP (Host)</label>
+                    <input type="text" id="smtp_host" class="form-control" placeholder="smtp.gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>Puerto</label>
+                    <input type="number" id="smtp_port" class="form-control" placeholder="587">
+                </div>
+                <div class="form-group">
+                    <label>Usuario / Correo</label>
+                    <input type="text" id="smtp_user" class="form-control" placeholder="tu_correo@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña (App Password)</label>
+                    <input type="password" id="smtp_password" class="form-control" placeholder="••••••••">
+                    <small>Para Gmail, usa una <a href="https://myaccount.google.com/apppasswords" target="_blank">Contraseña de Aplicación</a>.</small>
+                </div>
+                <div class="form-group">
+                    <label>Remitente (Opcional)</label>
+                    <input type="text" id="smtp_from_email" class="form-control" placeholder="No Responder <no-reply@tuempresa.com>">
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <button class="btn-secondary" onclick="testSMTP()" style="background-color: #f1c40f; color: #fff; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-paper-plane"></i> Probar Envío
+                    </button>
+                    <span id="smtp_test_status" style="margin-left: 10px; font-weight: bold;"></span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>WhatsApp Web (Baileys)</h3>
+                <p>Gestiona tus líneas de WhatsApp (Multi-Instancia).</p>
+                <button class="btn-primary" onclick="window.location.href='/channels'">Ir a Mis Canales</button>
+            </div>
+
+            <button class="btn-primary" onclick="saveSettings(this)">Guardar Integraciones</button>
+        </div>
+
+        <!-- SYSTEM LOGS TAB (HIDDEN BY DEFAULT) -->
+        <div id="system-logs" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Logs del Sistema (Modo Debug)</h3>
+                    <button class="btn-secondary" onclick="loadSystemLogs()" style="font-size: 12px; padding: 5px 10px;">🔄 Recargar</button>
+                </div>
+                <p>Monitoreo técnico de rotaciones, errores de API y eventos críticos.</p>
+                
+                <div style="max-height: 500px; overflow-y: auto; background: #1e1e1e; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <table style="width: 100%; border-collapse: collapse; color: #d4d4d4; font-family: monospace; font-size: 12px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #333; text-align: left;">
+                                <th style="padding: 8px;">Fecha</th>
+                                <th style="padding: 8px;">Tipo</th>
+                                <th style="padding: 8px;">Proveedor</th>
+                                <th style="padding: 8px;">Mensaje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-body">
+                            <!-- Logs will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- KNOWLEDGE TAB -->
+        <div id="knowledge" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Documentos</h3>
+                    <button class="btn-primary" onclick="document.getElementById('file_doc').click()">+ Subir Documento</button>
+                    <input type="file" id="file_doc" hidden onchange="uploadDocument()">
+                </div>
+                <p>Sube PDFs o TXT para entrenar al bot.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="background: #f1f2f6; text-align: left;">
+                            <th style="padding: 10px;">Nombre</th>
+                            <th style="padding: 10px;">Estado</th>
+                            <th style="padding: 10px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="doc_list">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CALENDAR TAB -->
+        <div id="calendar" class="tab-content">
+
+            <div class="card">
+                <h3>Google Calendar</h3>
+                <p>Vincula tu cuenta para permitir agendamiento automático.</p>
+                
+                <div id="calendar_status" class="alert" style="display:none; margin-bottom: 20px;"></div>
+                
+                <button id="btn_connect_calendar" class="btn-primary" onclick="connectCalendar()" style="background-color: #DB4437;">
+                    <i class="fab fa-google"></i> Conectar Google Calendar
+                </button>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">Reglas de Agendamiento</h3>
+                    <button class="btn-primary" onclick="saveCalendarSettings(this)">Guardar Cambios</button>
+                </div>
+                <div class="form-group">
+                    <label>Duración de Cita (Minutos)</label>
+                    <select id="slot_duration" class="form-control">
+                        <option value="15">15 min</option>
+                        <option value="30">30 min</option>
+                        <option value="45">45 min</option>
+                        <option value="60">60 min (1 hora)</option>
+                        <option value="90">90 min (1.5 horas)</option>
+                        <option value="120">120 min (2 horas)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horario Laboral</label>
+                    <div id="schedule_builder" style="border: 1px solid var(--border-color); padding: 15px; border-radius: 4px; background: white;">
+                        <!-- JS will populate this -->
+                    </div>
+                    <textarea id="working_hours" class="form-control" style="display:none;"></textarea>
+                    <div class="mt-2" style="text-align: right;">
+                        <button class="btn-secondary" onclick="copyScheduleToAll()" style="padding: 5px 10px; font-size: 12px; cursor: pointer; background: #95a5a6; color: white; border: none; border-radius: 4px;">Copiar Lunes a todos</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="timezone" class="form-label">Zona Horaria (Timezone)</label>
+                  <select id="timezone" class="form-control">
+                      <optgroup label="Americas">
+                          <option value="America/Bogota">Bogotá (UTC-5)</option>
+                          <option value="America/Mexico_City">México (UTC-6)</option>
+                          <option value="America/Panama">Panamá (UTC-5)</option>
+                          <option value="America/Lima">Lima (UTC-5)</option>
+                          <option value="America/Guayaquil">Guayaquil (UTC-5)</option>
+                          <option value="America/Caracas">Caracas (UTC-4)</option>
+                          <option value="America/La_Paz">La Paz (UTC-4)</option>
+                          <option value="America/Santiago">Santiago (UTC-3)</option>
+                          <option value="America/Asuncion">Asunción (UTC-3)</option>
+                          <option value="America/Montevideo">Montevideo (UTC-3)</option>
+                          <option value="America/Argentina/Buenos_Aires">Buenos Aires (UTC-3)</option>
+                          <option value="America/Sao_Paulo">Sao Paulo (UTC-3)</option>
+                          <option value="America/New_York">New York (UTC-5)</option>
+                          <option value="America/Chicago">Chicago (UTC-6)</option>
+                          <option value="America/Denver">Denver (UTC-7)</option>
+                          <option value="America/Los_Angeles">Los Angeles (UTC-8)</option>
+                      </optgroup>
+                      <optgroup label="Europa">
+                          <option value="Europe/Madrid">Madrid (UTC+1)</option>
+                          <option value="Europe/London">London (UTC+0)</option>
+                          <option value="Europe/Paris">Paris (UTC+1)</option>
+                          <option value="Europe/Berlin">Berlin (UTC+1)</option>
+                          <option value="Europe/Rome">Rome (UTC+1)</option>
+                      </optgroup>
+                      <optgroup label="Otros">
+                          <option value="UTC">UTC / GMT</option>
+                          <option value="Asia/Tokyo">Tokyo (UTC+9)</option>
+                          <option value="Asia/Shanghai">Shanghai (UTC+8)</option>
+                          <option value="Asia/Dubai">Dubai (UTC+4)</option>
+                          <option value="Australia/Sydney">Sydney (UTC+11)</option>
+                      </optgroup>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        Recordatorios de Citas
+                        <button type="button" class="btn-primary" onclick="addReminderRule()" style="font-size: 12px; padding: 5px 10px;">+ Añadir Regla</button>
+                    </label>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Configura mensajes automáticos antes de la cita. Usa {name}, {date}, {time} y {title} en el mensaje.</p>
+                    <div id="reminder_rules_container" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- JS will populate -->
+                    </div>
+                </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Credenciales de Google (OAuth 2.0)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <small>
+                            Obtén estas credenciales en <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>.
+                            <br>Asegúrate de agregar <b><span id="redirect_uri_display"></span></b> en "Authorized redirect URIs".
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="google_client_id" class="form-label">Client ID</label>
+                        <input type="text" id="google_client_id" class="form-control" placeholder="xxxxxxxx.apps.googleusercontent.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="google_client_secret" class="form-label">Client Secret</label>
+                        <input type="password" id="google_client_secret" class="form-control" placeholder="••••••••••••••">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary w-100" onclick="saveCalendarSettings(this)">Guardar Configuración de Calendario</button>
+        </div>
+
+    </div>
+
+    <!-- Floating Save Button placed globally -->
+    <button onclick="saveCalendarSettings()" class="fab-button" style="position: fixed; bottom: 30px; right: 30px; background-color: var(--accent-color); color: white; border: none; padding: 15px 25px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 16px; font-weight: bold; cursor: pointer; z-index: 1000; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-save"></i> GUARDAR TODO
+    </button>
+    
+    <!-- DOCUMENT EDIT MODAL -->
+    <div id="docEditModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; width: 80%; max-width: 800px; height: 80%; border-radius: 8px; padding: 20px; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 id="modalDocTitle">Editar Documento</h3>
+                <button onclick="closeDocModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <textarea id="docContentEditor" style="flex: 1; width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; resize: none; margin-bottom: 15px;"></textarea>
+            <div style="text-align: right;">
+                <button class="btn-primary" onclick="saveDocumentContent()">Guardar Cambios</button>
+                <button onclick="closeDocModal()" style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+        
+        let currentDocId = null;
+
+        function showTab(tabId) {
+            console.log("Switching to tab:", tabId);
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            const tabButtons = document.querySelectorAll('.tab');
+            const tabs = ['general', 'branding', 'integrations', 'knowledge', 'calendar', 'system-logs'];
+            const index = tabs.indexOf(tabId);
+            
+            if (index !== -1 && tabButtons[index]) {
+                tabButtons[index].classList.add('active');
+            }
+            
+            const content = document.getElementById(tabId);
+            if (content) content.classList.add('active');
+        }
+
+        async function fetchAPI(url, method = 'GET', body = null) {
+            const headers = { 'Authorization': `Bearer ${token}` };
+            if (body && !(body instanceof FormData)) {
+                headers['Content-Type'] = 'application/json';
+                body = JSON.stringify(body);
+            }
+            const options = { method, headers };
+            if (body) options.body = body;
+            const res = await fetch(url, options);
+            if (res.status === 401) window.location.href = '/login';
+            return res;
+        }
+
+        // --- SCHEDULE BUILDER LOGIC ---
+        const DAYS = {
+            "mon": "Lunes", "tue": "Martes", "wed": "Miércoles", 
+            "thu": "Jueves", "fri": "Viernes", "sat": "Sábado", "sun": "Domingo"
+        };
+        const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+        // --- REMINDER RULES BUIDER ---
+        let currentReminderRules = [];
+        function renderReminderRules(rules) {
+            currentReminderRules = rules || [];
+            const container = document.getElementById('reminder_rules_container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            currentReminderRules.forEach((rule, index) => {
+                const div = document.createElement('div');
+                div.style = "background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; position: relative;";
+                div.innerHTML = `
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px;">Horas antes</label>
+                            <input type="number" value="${rule.hours_before}" class="form-control" onchange="updateRule(${index}, 'hours_before', this.value)">
+                        </div>
+                        <div style="flex: 3;">
+                            <label style="font-size: 11px;">Mensaje Personalizado</label>
+                            <input type="text" value="${rule.message || ''}" class="form-control" placeholder="Ej: Hola {name}, cita en {time}..." onchange="updateRule(${index}, 'message', this.value)">
+                        </div>
+                        <button onclick="removeReminderRule(${index})" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size: 18px; margin-top: 15px;">&times;</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addReminderRule() {
+            currentReminderRules.push({ id: Date.now(), hours_before: 24, message: "" });
+            renderReminderRules(currentReminderRules);
+        }
+
+        function removeReminderRule(index) {
+            currentReminderRules.splice(index, 1);
+            renderReminderRules(currentReminderRules);
+        }
+
+        function updateRule(index, field, value) {
+            if (field === 'hours_before') value = parseInt(value);
+            currentReminderRules[index][field] = value;
+        }
+
+        function getReminderRules() { return currentReminderRules; }
+
+        function renderScheduleBuilder(currentSchedule) {
+            console.log("Rendering Schedule Builder with:", currentSchedule);
+            const container = document.getElementById('schedule_builder');
+            if (!container) return;
+            
+            let fullHTML = "";
+            DAY_KEYS.forEach(dayKey => {
+                const daySlots = currentSchedule[dayKey] || [];
+                let slotsHTML = "";
+                
+                if (daySlots.length === 0) {
+                    slotsHTML = `<div style="font-size: 12px; color: #999; padding: 5px; background: #f9f9f9; border-radius: 4px; margin-bottom: 5px;">Cerrado</div>`;
+                } else {
+                    daySlots.forEach((slot, index) => {
+                        const [start, end] = slot.split('-');
+                        slotsHTML += `
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: #f8f9fa; padding: 8px; border-radius: 4px; border: 1px solid #eee;">
+                                <input type="time" value="${start}" oninput="updateScheduleJSON()" class="slot-start-${dayKey}" style="border: 1px solid #ccc; padding: 4px; border-radius: 3px;">
+                                <span style="color: #666;">a</span>
+                                <input type="time" value="${end}" oninput="updateScheduleJSON()" class="slot-end-${dayKey}" style="border: 1px solid #ccc; padding: 4px; border-radius: 3px;">
+                                <button onclick="removeSlot('${dayKey}', ${index})" style="background:none; border:none; color:#e74c3c; cursor:pointer; padding: 5px; font-size: 16px;" title="Eliminar este turno">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                            </div>
+                        `;
+                    });
+                }
+
+                fullHTML += `
+                    <div style="margin-bottom: 15px; border: 1px solid #eee; padding: 12px; border-radius: 6px; background: #fff;">
+                        <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: #2c3e50;">${DAYS[dayKey]}</strong>
+                        </div>
+                        <div id="slots_${dayKey}">${slotsHTML}</div>
+                        <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px; margin-top: 5px; cursor: pointer; border-radius: 4px; background: #f1f2f6; border: 1px solid #dfe4ea;" onclick="addSlot('${dayKey}')">
+                            <i class="fas fa-plus"></i> Agregar Horario
+                        </button>
+                    </div>
+                `;
+            });
+            container.innerHTML = fullHTML;
+        }
+
+        function createSlotElement(dayKey, timeRange, index) {
+            const [start, end] = timeRange ? timeRange.split('-') : ["09:00", "17:00"];
+            
+            const div = document.createElement('div');
+            div.style.display = "flex";
+            div.style.alignItems = "center";
+            div.style.gap = "5px";
+            div.style.marginBottom = "5px";
+            
+            div.innerHTML = `
+                <input type="time" value="${start}" oninput="updateScheduleJSON()" class="slot-start-${dayKey}">
+                <span>a</span>
+                <input type="time" value="${end}" oninput="updateScheduleJSON()" class="slot-end-${dayKey}">
+                <button onclick="removeSlot('${dayKey}', ${index})" style="background:none; border:none; color:red; cursor:pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            return div;
+        }
+
+        function addSlot(dayKey) {
+            // Get current schedule from UI
+            const schedule = getScheduleFromUI();
+            if (!schedule[dayKey]) schedule[dayKey] = [];
+            schedule[dayKey].push("09:00-18:00");
+            renderScheduleBuilder(schedule);
+            updateScheduleJSON();
+        }
+
+        function removeSlot(dayKey, index) {
+            const schedule = getScheduleFromUI();
+            if (schedule[dayKey]) {
+                schedule[dayKey].splice(index, 1);
+            }
+            renderScheduleBuilder(schedule);
+            updateScheduleJSON();
+        }
+
+        function copyScheduleToAll() {
+            const schedule = getScheduleFromUI();
+            const mondaySlots = schedule["mon"] || [];
+            
+            DAY_KEYS.forEach(key => {
+                if(key !== "mon") {
+                    schedule[key] = [...mondaySlots];
+                }
+            });
+            renderScheduleBuilder(schedule);
+            updateScheduleJSON();
+        }
+
+        function getScheduleFromUI() {
+            const schedule = {};
+            DAY_KEYS.forEach(key => {
+                const starts = document.querySelectorAll(`.slot-start-${key}`);
+                const ends = document.querySelectorAll(`.slot-end-${key}`);
+                const slots = [];
+                
+                for(let i=0; i<starts.length; i++) {
+                    const s = starts[i].value;
+                    const e = ends[i].value;
+                    if(s && e) slots.push(`${s}-${e}`);
+                }
+                if (slots.length > 0) schedule[key] = slots;
+            });
+            return schedule;
+        }
+
+        function updateScheduleJSON() {
+            const schedule = getScheduleFromUI();
+            // Update hidden textarea for saving
+            document.getElementById('working_hours').value = JSON.stringify(schedule);
+        }
+
+        // --- EXISTING FUNCTIONS UPDATED ---
+
+
+        async function connectCalendar() {
+             const res = await fetchAPI('/calendar/auth-url');
+             if (res.ok) {
+                 const data = await res.json();
+                 // Open popup
+                 const width = 600;
+                 const height = 700;
+                 const left = (screen.width - width) / 2;
+                 const top = (screen.height - height) / 2;
+                 window.open(data.url, 'Google Auth', `width=${width},height=${height},top=${top},left=${left}`);
+             } else {
+                 alert("Error obteniendo URL de autorización");
+             }
+        }
+
+        async function uploadBranding(type) {
+            const fileInput = document.getElementById(`file_${type}`);
+            if (fileInput.files.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('type', type);
+            
+            const res = await fetchAPI('/api/settings/upload/branding', 'POST', formData);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById(`preview_${type}`).src = data.url;
+                if(data.favicon_url) document.getElementById('preview_favicon').src = data.favicon_url;
+
+
+                showAlert('Imagen subida correctamente', 'success');
+            }
+        }
+
+        async function loadDocuments() {
+            const res = await fetchAPI('/api/settings/documents');
+            if (res.ok) {
+                const docs = await res.json();
+                const tbody = document.getElementById('doc_list');
+                tbody.innerHTML = docs.map(d => `
+                    <tr>
+                        <td style="padding: 10px;">${d.filename}</td>
+                        <td style="padding: 10px;"><span style="background: #a4b0be; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px;">${d.status}</span></td>
+                        <td style="padding: 10px;">
+                            <button onclick="openDocumentEditor(${d.id})" style="color: #3498db; background: none; border: none; cursor: pointer; margin-right: 10px;" title="Ver/Editar"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteDocument(${d.id})" style="color: #e74c3c; background: none; border: none; cursor: pointer;" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function saveSettings(btnElement) {
+            let originalText = "";
+            if(btnElement) {
+                originalText = btnElement.innerHTML;
+                btnElement.disabled = true;
+                btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            }
+
+            const body = {
+                system_prompt: document.getElementById('system_prompt').value,
+                golden_rules: document.getElementById('golden_rules').value,
+                openai_api_key: document.getElementById('openai_api_key').value,
+                groq_api_key: document.getElementById('groq_api_key').value,
+                gemini_api_key: document.getElementById('gemini_api_key').value,
+                telegram_token: document.getElementById('telegram_token').value,
+                verify_token: document.getElementById('verify_token').value,
+                facebook_page_id: document.getElementById('facebook_page_id').value,
+                // SMTP
+                smtp_host: document.getElementById('smtp_host').value,
+                smtp_port: parseInt(document.getElementById('smtp_port').value) || 587,
+                smtp_user: document.getElementById('smtp_user').value,
+                smtp_password: document.getElementById('smtp_password').value,
+                smtp_from_email: document.getElementById('smtp_from_email').value
+            };
+            
+            try {
+                const res = await fetchAPI('/api/settings/update', 'POST', body);
+                if (res.ok) {
+                    showAlert('Ajustes guardados correctamente', 'success');
+                    if(btnElement) {
+                        btnElement.innerHTML = '<i class="fas fa-check"></i> ¡Guardado!';
+                        btnElement.style.backgroundColor = '#2ecc71';
+                        setTimeout(() => {
+                            btnElement.innerHTML = originalText;
+                            btnElement.disabled = false;
+                            btnElement.style.backgroundColor = '';
+                        }, 2000);
+                    }
+                } else {
+                    showAlert('Error al guardar ajustes', 'error');
+                    if(btnElement) {
+                        btnElement.innerHTML = originalText;
+                        btnElement.disabled = false;
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                showAlert('Error crítico al guardar', 'error');
+                if(btnElement) {
+                    btnElement.innerHTML = originalText;
+                    btnElement.disabled = false;
+                }
+            }
+        }
+
+        async function testSMTP() {
+            const email = prompt("Ingrese un correo para recibir la prueba:");
+            if (!email) return;
+
+            const statusSpan = document.getElementById('smtp_test_status');
+            statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            statusSpan.style.color = 'orange';
+
+            // First save settings to ensure backend has latest credentials
+            await saveSettings();
+
+            try {
+                const res = await fetchAPI('/api/settings/test-email', 'POST', { to_email: email });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    statusSpan.innerHTML = '<i class="fas fa-check"></i> Éxito';
+                    statusSpan.style.color = 'green';
+                    alert(data.message);
+                } else {
+                    statusSpan.innerHTML = '<i class="fas fa-times"></i> Error';
+                    statusSpan.style.color = 'red';
+                    alert("Error: " + data.detail);
+                }
+            } catch (e) {
+                statusSpan.innerHTML = '<i class="fas fa-bomb"></i> Falló';
+                statusSpan.style.color = 'red';
+                console.error(e);
+            }
+        }
+
+        async function uploadDocument() {
+            const fileInput = document.getElementById('file_doc');
+            if (fileInput.files.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            const res = await fetchAPI('/api/settings/upload/document', 'POST', formData);
+            if (res.ok) {
+                showAlert('Documento subido. Procesando texto...', 'success');
+                loadDocuments();
+            } else {
+                showAlert('Error al subir documento', 'error');
+            }
+        }
+
+        async function deleteDocument(id) {
+            if(!confirm("¿Segura? Se borrará el documento y su aprendizaje.")) return;
+            const res = await fetchAPI(`/api/settings/documents/${id}`, 'DELETE');
+            if (res.ok) loadDocuments();
+        }
+
+        async function loadSettings() {
+            try {
+                console.log("Loading settings...");
+                
+                // 1. General Settings
+                try {
+                    const resSettings = await fetchAPI('/api/settings');
+                    if (resSettings.ok) {
+                        const data = await resSettings.json();
+                        console.log("General Settings data:", data);
+                        
+                        const setVal = (id, val) => {
+                            const el = document.getElementById(id);
+                            if(el) el.value = val || '';
+                        };
+
+                        setVal('system_prompt', data.system_prompt);
+                        setVal('golden_rules', data.golden_rules);
+                        setVal('openai_api_key', data.openai_api_key);
+                        setVal('groq_api_key', data.groq_api_key);
+                        setVal('gemini_api_key', data.gemini_api_key);
+                        setVal('telegram_token', data.telegram_token);
+                        setVal('verify_token', data.verify_token);
+                        setVal('facebook_page_id', data.facebook_page_id);
+                        setVal('smtp_host', data.smtp_host || 'smtp.gmail.com');
+                        setVal('smtp_port', data.smtp_port || 587);
+                        setVal('smtp_user', data.smtp_user);
+                        setVal('smtp_password', data.smtp_password);
+                        setVal('smtp_from_email', data.smtp_from_email);
+                        
+                        if (data.logo_url && document.getElementById('preview_logo')) document.getElementById('preview_logo').src = data.logo_url;
+                        if (data.icon_url && document.getElementById('preview_icon')) document.getElementById('preview_icon').src = data.icon_url;
+                        if (data.favicon_url && document.getElementById('preview_favicon')) document.getElementById('preview_favicon').src = data.favicon_url;
+                        
+                        checkAudioStatus();
+                    } else {
+                        console.error("Error loading /settings:", resSettings.status);
+                    }
+                } catch (e) {
+                    console.error("Catastrophic error in General Settings load:", e);
+                }
+
+                // 2. Calendar Settings
+                try {
+                    const resCal = await fetchAPI('/calendar/settings');
+                    if (resCal.ok) {
+                        const calData = await resCal.json();
+                        console.log("Calendar Settings data:", calData);
+                        
+                        if (calData.slot_duration && document.getElementById('slot_duration')) {
+                            document.getElementById('slot_duration').value = calData.slot_duration;
+                        }
+                        
+                        const workingHours = calData.working_hours || {};
+                        if(document.getElementById('working_hours')) {
+                            document.getElementById('working_hours').value = JSON.stringify(workingHours, null, 2);
+                        }
+                        renderScheduleBuilder(workingHours);
+
+                        if (calData.timezone && document.getElementById('timezone')) {
+                            document.getElementById('timezone').value = calData.timezone || "America/Bogota";
+                        }
+                        
+                        renderReminderRules(calData.reminder_rules || []);
+                        
+                        if (calData.google_client_id && document.getElementById('google_client_id')) {
+                            document.getElementById('google_client_id').value = calData.google_client_id;
+                        }
+                        if (calData.google_client_secret && document.getElementById('google_client_secret')) {
+                            document.getElementById('google_client_secret').value = calData.google_client_secret;
+                        }
+                        
+                        const statusDiv = document.getElementById('calendar_status');
+                        const btnConnect = document.getElementById('btn_connect_calendar');
+                        if (statusDiv && btnConnect) {
+                            if (calData.google_refresh_token) {
+                                statusDiv.style.display = 'block';
+                                statusDiv.className = 'alert alert-success';
+                                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> <b>Conectado:</b> Google Calendar vinculado.';
+                                btnConnect.innerText = "Cambiar Cuenta de Google";
+                            } else {
+                                statusDiv.style.display = 'block';
+                                statusDiv.className = 'alert';
+                                statusDiv.style.backgroundColor = '#fff3cd';
+                                statusDiv.style.color = '#856404';
+                                statusDiv.innerText = 'No conectado a Google Calendar.';
+                            }
+                        }
+                    } else {
+                        console.error("Error loading /calendar/settings:", resCal.status);
+                        renderScheduleBuilder({}); 
+                    }
+                } catch (e) {
+                    console.error("Error loading Calendar Settings:", e);
+                    renderScheduleBuilder({});
+                }
+            } catch (outerErr) {
+                console.error("Critical outer error in loadSettings:", outerErr);
+            }
+        }
+
+        async function openDocumentEditor(id) {
+            const res = await fetchAPI(`/api/settings/documents/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                currentDocId = data.id;
+                document.getElementById('modalDocTitle').innerText = 'Editar: ' + data.filename;
+                document.getElementById('docContentEditor').value = data.content || '';
+                
+                const modal = document.getElementById('docEditModal');
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeDocModal() {
+            document.getElementById('docEditModal').style.display = 'none';
+            currentDocId = null;
+        }
+
+        async function saveDocumentContent() {
+            if (!currentDocId) return;
+            const newContent = document.getElementById('docContentEditor').value;
+            
+            const res = await fetchAPI(`/api/settings/documents/${currentDocId}`, 'PUT', { content: newContent });
+            if (res.ok) {
+                showAlert('Contenido actualizado correctamente', 'success');
+                closeDocModal();
+            } else {
+                showAlert('Error al guardar cambios', 'error');
+            }
+        }
+
+        async function saveCalendarSettings(btnElement) {
+            let originalText = "";
+            if(btnElement) {
+                originalText = btnElement.innerHTML;
+                btnElement.disabled = true;
+                btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            }
+
+            try {
+                // Force sync
+                updateScheduleJSON();
+                
+                let workingHoursStr = document.getElementById('working_hours').value;
+                if (!workingHoursStr) workingHoursStr = "{}";
+                
+                let workingHours;
+                try {
+                    workingHours = JSON.parse(workingHoursStr);
+                } catch(e) {
+                    if(btnElement) {
+                        btnElement.innerHTML = '<i class="fas fa-times"></i> Error JSON';
+                        setTimeout(() => {
+                            btnElement.innerHTML = originalText;
+                            btnElement.disabled = false;
+                        }, 2000);
+                    }
+                    alert("El Horario Laboral debe ser un JSON válido. Revisa formato.");
+                    return;
+                }
+                
+                const body = {
+                    slot_duration: parseInt(document.getElementById('slot_duration').value),
+                    working_hours: workingHours,
+                    timezone: document.getElementById('timezone').value,
+                    google_client_id: document.getElementById('google_client_id').value,
+                    google_client_secret: document.getElementById('google_client_secret').value,
+                    reminder_rules: getReminderRules()
+                };
+                
+                const res = await fetchAPI('/calendar/settings', 'POST', body);
+                if (res.ok) {
+                    showAlert('Configuración de calendario guardada', 'success');
+                    if(btnElement) {
+                        btnElement.innerHTML = '<i class="fas fa-check"></i> ¡Guardado!';
+                        btnElement.style.backgroundColor = '#2ecc71'; // Success green
+                        setTimeout(() => {
+                            btnElement.innerHTML = originalText;
+                            btnElement.disabled = false;
+                            btnElement.style.backgroundColor = ''; // Revert color
+                        }, 2000);
+                    }
+                } else {
+                    const err = await res.json();
+                    showAlert('Error al guardar: ' + (err.detail || 'Desconocido'), 'error');
+                    if(btnElement) {
+                         btnElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                         setTimeout(() => {
+                            btnElement.innerHTML = originalText;
+                            btnElement.disabled = false;
+                         }, 2000);
+                    }
+                }
+            } catch (e) {
+                console.error("Calendar Save Error:", e);
+                showAlert('Error crítico: ' + e.message, 'error');
+                if(btnElement) {
+                     btnElement.innerHTML = '<i class="fas fa-bomb"></i> Falló';
+                     setTimeout(() => {
+                        btnElement.innerHTML = originalText;
+                        btnElement.disabled = false;
+                     }, 2000);
+                }
+            }
+        }
+
+        // Add Hover Effect to FAB
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .fab-button { transition: transform 0.2s, box-shadow 0.2s; }
+            .fab-button:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+            .fab-button:active { transform: scale(0.95); }
+        `;
+        document.head.appendChild(style);
+
+        function checkAudioStatus() {
+            const openai = document.getElementById('openai_api_key').value;
+            const groq = document.getElementById('groq_api_key').value;
+            const statusDiv = document.getElementById('audio-status');
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'alert';
+            
+            if (openai) {
+                statusDiv.classList.add('alert-success');
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> <b>Audio Activo:</b> Usando OpenAI Whisper-1 (Alta precisión).';
+            } else if (groq) {
+                statusDiv.classList.add('alert-success');
+                statusDiv.innerHTML = '<i class="fas fa-bolt"></i> <b>Audio Activo:</b> Usando Groq Whisper-v3 (Alta velocidad). <br><small>Nota: Groq es ideal para respuestas rápidas.</small>';
+            } else {
+                statusDiv.className = 'alert'; // default gray/warning
+                statusDiv.style.backgroundColor = '#fff3cd';
+                statusDiv.style.color = '#856404';
+                statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <b>Sin Audio:</b> Ingresa una API Key (OpenAI o Groq) para habilitar notas de voz.';
+            }
+        }
+
+        function showAlert(msg, type) {
+            const div = document.getElementById('alert-box');
+            div.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+            setTimeout(() => div.innerHTML = '', 3000);
+        }
+
+        // Hidden Logs Access (Ctrl+Shift+L)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 76) { // 'L'
+                const tab = document.getElementById('tab-logs');
+                if (tab.style.display === 'none') {
+                    tab.style.display = 'block';
+                    alert('⚠️ Modo Debug Activado: Pestaña de Logs disponible.');
+                    loadSystemLogs();
+                } else {
+                    tab.style.display = 'none';
+                }
+            }
+        });
+
+        async function loadSystemLogs() {
+            const res = await fetchAPI('/api/settings/logs');
+            if (res.ok) {
+                const logs = await res.json();
+                const container = document.getElementById('logs-body');
+                container.innerHTML = logs.map(log => {
+                    let color = '#d4d4d4'; // info
+                    if (log.event_type === 'error') color = '#f44336';
+                    if (log.event_type === 'rotation') color = '#2196F3';
+                    if (log.event_type === 'warning') color = '#FFC107';
+
+                    const date = new Date(log.created_at).toLocaleString();
+                    return `
+                        <tr style="border-bottom: 1px solid #222;">
+                            <td style="padding: 8px; white-space: nowrap;">${date}</td>
+                            <td style="padding: 8px;"><span style="color: ${color}; font-weight: bold;">${log.event_type.toUpperCase()}</span></td>
+                            <td style="padding: 8px;">${log.provider || '-'}</td>
+                            <td style="padding: 8px;">${log.message}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Initialize application flow
+        async function initApp() {
+            await loadSettings();
+            await loadDocuments();
+            checkAudioStatus();
+        }
+
+        initApp();
+    </script>
+</body>
+</html>

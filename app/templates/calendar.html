@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario - BAPE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --text-color: #333;
+            --light-gray: #f5f6fa;
+            --border-color: #dcdde1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        .sidebar h2 { text-align: center; margin-bottom: 30px; color: white; }
+        .menu-item { 
+            padding: 12px 15px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            margin-bottom: 8px; 
+            text-decoration: none; 
+            color: #ecf0f1; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            font-weight: 500;
+        }
+        .menu-item i { width: 20px; text-align: center; }
+        .menu-item:hover { 
+            background-color: var(--secondary-color); 
+            transform: translateX(5px);
+        }
+        .menu-item.active { 
+            background-color: var(--accent-color); 
+            color: white;
+        }
+        .btn-logout { margin-top: auto; background-color: #e74c3c; justify-content: center; }
+        .btn-logout:hover { background-color: #c0392b; transform: none; }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            flex: 1;
+        }
+
+        /* FullCalendar Customization */
+        #calendar { height: 100%; }
+        .fc-header-toolbar { margin-bottom: 1.5em !important; }
+        .fc-button-primary { background-color: var(--accent-color) !important; border-color: var(--accent-color) !important; }
+        .fc-event { cursor: pointer; border: none !important; padding: 2px 5px !important; }
+
+        /* Modals */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; }
+        
+        .btn { padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; font-size: 14px; }
+        .btn-primary { background: var(--accent-color); color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        
+        /* Contact Suggestion */
+        .contact-search-box { position: relative; }
+        .suggestions {
+            position: absolute; top: 100%; left: 0; width: 100%; background: white;
+            border: 1px solid #ddd; border-top: none; max-height: 150px; overflow-y: auto;
+            z-index: 100; border-radius: 0 0 6px 6px; display: none;
+        }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; }
+        .suggestion-item:hover { background: #f1f2f6; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>BAPE Panel</h2>
+        <a href="/inbox" class="menu-item">
+            <i class="fas fa-inbox"></i> Bandeja
+        </a>
+        <a href="/calendar" class="menu-item active">
+            <i class="fas fa-calendar-alt"></i> Calendario
+        </a>
+        <a href="/dashboard?section=products" class="menu-item">
+            <i class="fas fa-box"></i> Productos
+        </a>
+        <a href="/dashboard?section=services" class="menu-item">
+            <i class="fas fa-concierge-bell"></i> Servicios
+        </a>
+        <a href="/channels" class="menu-item">
+            <i class="fas fa-comments"></i> Canales
+        </a>
+        <a href="/contacts" class="menu-item">
+            <i class="fas fa-users"></i> Clientes
+        </a>
+        <a href="/settings" class="menu-item">
+            <i class="fas fa-cog"></i> Ajustes
+        </a>
+        <div class="menu-item btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1>Gestión de Agenda</h1>
+                <p>Vista interactiva de tus citas locales y Google Calendar.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openBookingModal()">+ Nueva Cita</button>
+        </div>
+
+        <div class="card">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- BOOKING MODAL -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nueva Reserva</h3>
+                <button onclick="closeModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            
+            <div class="form-group contact-search-box">
+                <label>Vincular a Cliente (CRM)</label>
+                <input type="text" id="contact_search" class="form-control" placeholder="Nombre o Teléfono..." oninput="searchContacts(this.value)">
+                <div id="suggestions" class="suggestions"></div>
+                <input type="hidden" id="selected_contact_id">
+            </div>
+
+            <div class="form-group">
+                <label>Nombre del Cliente (Manual)</label>
+                <input type="text" id="client_name" class="form-control" placeholder="Nombre Completo">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Teléfono</label>
+                    <input type="text" id="client_phone" class="form-control" placeholder="573...">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Email</label>
+                    <input type="email" id="client_email" class="form-control" placeholder="user@gmail.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Título de la Cita</label>
+                <input type="text" id="appt_title" class="form-control" placeholder="Ej: Corte de Cabello">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Inicio</label>
+                    <input type="datetime-local" id="start_time" class="form-control">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Fin</label>
+                    <input type="datetime-local" id="end_time" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Estado</label>
+                <select id="appt_status" class="form-control">
+                    <option value="confirmed">Confirmada</option>
+                    <option value="cancelled">Cancelada</option>
+                </select>
+            </div>
+
+            <div id="modalActions" style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button id="btn_delete" class="btn btn-danger" style="display:none;" onclick="deleteAppointment()">Eliminar</button>
+                <div style="display:flex; gap:10px; margin-left: auto;">
+                    <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button id="btn_save" class="btn btn-primary" onclick="saveAppointment()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        let calendar;
+        let selectedApptId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                locale: 'es',
+                slotMinTime: '06:00:00',
+                slotMaxTime: '22:00:00',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                buttonText: {
+                    today: 'Hoy',
+                    month: 'Mes',
+                    week: 'Semana',
+                    day: 'Día'
+                },
+                editable: false, // For now handle via modal
+                events: fetchEvents,
+                eventClick: function(info) {
+                    openEditModal(info.event);
+                },
+                dateClick: function(info) {
+                    openBookingModal(info.dateStr);
+                }
+            });
+            calendar.render();
+        });
+
+        async function fetchEvents(info, successCallback, failureCallback) {
+            const res = await fetch(`/calendar/appointments?start=${info.startStr}&end=${info.endStr}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const events = data.map(a => ({
+                    id: a.id,
+                    title: a.title,
+                    start: a.start_time,
+                    end: a.end_time,
+                    backgroundColor: a.is_external ? '#95a5a6' : (a.status === 'confirmed' ? '#3498db' : '#e74c3c'),
+                    textColor: 'white',
+                    extendedProps: { ...a }
+                }));
+                successCallback(events);
+            } else {
+                failureCallback();
+            }
+        }
+
+        function openBookingModal(dateStr) {
+            selectedApptId = null;
+            document.getElementById('modalTitle').innerText = 'Nueva Reserva';
+            document.getElementById('btn_delete').style.display = 'none';
+            document.getElementById('btn_save').style.display = 'block';
+            
+            // Re-enable fields
+            const fields = ['client_name', 'client_phone', 'client_email', 'appt_title', 'appt_status', 'start_time', 'end_time', 'contact_search'];
+            fields.forEach(f => document.getElementById(f).disabled = false);
+
+            // Default times
+            let start = dateStr ? new Date(dateStr) : new Date();
+            if (dateStr && !dateStr.includes('T')) start.setHours(9,0,0);
+            
+            let end = new Date(start);
+            end.setMinutes(end.getMinutes() + 30);
+
+            document.getElementById('start_time').value = formatDateForInput(start);
+            document.getElementById('end_time').value = formatDateForInput(end);
+            
+            // Reset fields
+            document.getElementById('client_name').value = '';
+            document.getElementById('client_phone').value = '';
+            document.getElementById('client_email').value = '';
+            document.getElementById('appt_title').value = '';
+            document.getElementById('selected_contact_id').value = '';
+            document.getElementById('contact_search').value = '';
+
+            document.getElementById('bookingModal').style.display = 'flex';
+        }
+
+        function openEditModal(event) {
+            selectedApptId = event.id;
+            const props = event.extendedProps;
+            const isExternal = props.is_external;
+            
+            document.getElementById('modalTitle').innerText = isExternal ? 'Cita Externo (GCal)' : 'Editar Cita';
+            document.getElementById('btn_delete').style.display = isExternal ? 'none' : 'block';
+            document.getElementById('btn_save').style.display = isExternal ? 'none' : 'block';
+            
+            document.getElementById('start_time').value = formatDateForInput(event.start);
+            document.getElementById('end_time').value = formatDateForInput(event.end);
+            
+            document.getElementById('client_name').value = props.client_name || '';
+            document.getElementById('client_phone').value = props.client_phone || '';
+            document.getElementById('client_email').value = props.client_email || '';
+            document.getElementById('appt_title').value = event.title;
+            document.getElementById('appt_status').value = props.status || 'confirmed';
+            document.getElementById('selected_contact_id').value = props.contact_id || '';
+            
+            // Disable editing if external
+            const fields = ['client_name', 'client_phone', 'client_email', 'appt_title', 'appt_status', 'start_time', 'end_time', 'contact_search'];
+            fields.forEach(f => document.getElementById(f).disabled = isExternal);
+
+            document.getElementById('bookingModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+        }
+
+        function formatDateForInput(date) {
+            const offset = date.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(date - offset)).toISOString().slice(0, 16);
+            return localISOTime;
+        }
+
+        async function saveAppointment() {
+            const payload = {
+                title: document.getElementById('appt_title').value,
+                client_name: document.getElementById('client_name').value,
+                client_phone: document.getElementById('client_phone').value,
+                client_email: document.getElementById('client_email').value,
+                start_time: document.getElementById('start_time').value,
+                end_time: document.getElementById('end_time').value,
+                status: document.getElementById('appt_status').value,
+                contact_id: document.getElementById('selected_contact_id').value || null
+            };
+
+            const url = selectedApptId ? `/calendar/appointments/${selectedApptId}` : '/calendar/manual-book';
+            const method = selectedApptId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                closeModal();
+                calendar.refetchEvents();
+            } else {
+                const err = await res.json();
+                alert("Error: " + (err.detail || "No se pudo guardar"));
+            }
+        }
+
+        async function deleteAppointment() {
+            if (!confirm("¿Segura que deseas eliminar esta cita?")) return;
+            const res = await fetch(`/calendar/appointments/${selectedApptId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                closeModal();
+                calendar.refetchEvents();
+            }
+        }
+
+        async function searchContacts(query) {
+            if (query.length < 2) {
+                document.getElementById('suggestions').style.display = 'none';
+                return;
+            }
+            const res = await fetch(`/api/contacts?search=${query}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const contacts = await res.json();
+                const container = document.getElementById('suggestions');
+                container.innerHTML = contacts.map(c => `
+                    <div class="suggestion-item" onclick="selectContact(${c.id}, '${c.name}', '${c.phone}', '${c.email}')">
+                        <b>${c.name || 'Sin nombre'}</b> (${c.phone})
+                    </div>
+                `).join('');
+                container.style.display = contacts.length ? 'block' : 'none';
+            }
+        }
+
+        function selectContact(id, name, phone, email) {
+            document.getElementById('selected_contact_id').value = id;
+            document.getElementById('contact_search').value = name || phone;
+            document.getElementById('client_name').value = name || '';
+            document.getElementById('client_phone').value = phone || '';
+            document.getElementById('client_email').value = email || '';
+            document.getElementById('suggestions').style.display = 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

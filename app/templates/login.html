@@ -77,6 +77,9 @@
             </div>
             <button type="submit">Ingresar</button>
             <p class="error" id="errorMessage"></p>
+            <div style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <a href="/register">¿No tienes cuenta? Regístrate</a>
+            </div>
         </form>
     </div>
 
@@ -100,7 +103,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     localStorage.setItem('token', data.access_token);
-                    window.location.href = '/dashboard';
+                    window.location.href = '/channels';
                 } else {
                     errorMessage.textContent = 'Credenciales inválidas';
                     errorMessage.style.display = 'block';

@@ -7,6 +7,7 @@
     <title>Dashboard - BAPE</title>
     <!-- CSS de Quill -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,6 +26,7 @@
             display: flex;
             flex-direction: column;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
         }
 
         .sidebar h2 {
@@ -33,6 +35,7 @@
             text-align: center;
             font-weight: 600;
             letter-spacing: 1px;
+            color: white;
         }
 
         .menu-item {
@@ -42,6 +45,16 @@
             margin-bottom: 8px;
             transition: all 0.3s ease;
             font-weight: 500;
+            color: #ecf0f1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-item i {
+            width: 20px;
+            text-align: center;
         }
 
         .menu-item:hover {
@@ -58,7 +71,7 @@
         .menu-item.btn-logout {
             margin-top: auto;
             background-color: #e74c3c;
-            text-align: center;
+            justify-content: center;
         }
 
         .menu-item.btn-logout:hover {
@@ -221,11 +234,36 @@
 <body>
     <div class="sidebar">
         <h2>BAPE Panel</h2>
-        <div id="btn-products" class="menu-item active" onclick="showSection('products')">Productos</div>
-        <div id="btn-services" class="menu-item" onclick="showSection('services')">Servicios</div>
-        <div id="btn-categories" class="menu-item" onclick="showSection('categories')">Categorías</div>
-        <div id="btn-users" class="menu-item" onclick="showSection('users')">Usuarios</div>
-        <div class="menu-item btn-logout" id="logoutBtn" onclick="logout()">Cerrar Sesión</div>
+        <a href="/inbox" class="menu-item" id="btn-inbox">
+            <i class="fas fa-inbox"></i> Bandeja
+        </a>
+        <a href="/calendar" class="menu-item" id="btn-calendar">
+            <i class="fas fa-calendar-alt"></i> Calendario
+        </a>
+        <a href="/dashboard?section=products" class="menu-item" id="btn-products" onclick="showSection('products'); return false;">
+            <i class="fas fa-box"></i> Productos
+        </a>
+        <a href="/dashboard?section=services" class="menu-item" id="btn-services" onclick="showSection('services'); return false;">
+            <i class="fas fa-concierge-bell"></i> Servicios
+        </a>
+        <a href="/dashboard?section=categories" class="menu-item" id="btn-categories" onclick="showSection('categories'); return false;">
+            <i class="fas fa-tags"></i> Categorías
+        </a>
+        <a href="/dashboard?section=users" class="menu-item" id="btn-users" onclick="showSection('users'); return false;">
+            <i class="fas fa-users-cog"></i> Usuarios
+        </a>
+        <a href="/channels" class="menu-item">
+            <i class="fas fa-comments"></i> Canales
+        </a>
+        <a href="/contacts" class="menu-item">
+            <i class="fas fa-users"></i> Clientes
+        </a>
+        <a href="/settings" class="menu-item">
+            <i class="fas fa-cog"></i> Ajustes
+        </a>
+        <div class="menu-item btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </div>
     </div>
 
     <div class="content">
@@ -436,6 +474,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Sección de WhatsApp eliminada (movida a /channels) -->
+
         </div>
     </div>
 
@@ -460,7 +501,9 @@
             document.getElementById('productsSection').classList.add('hidden');
             document.getElementById('servicesSection').classList.add('hidden');
             document.getElementById('categoriesSection').classList.add('hidden');
+            document.getElementById('categoriesSection').classList.add('hidden');
             document.getElementById('usersSection').classList.add('hidden');
+            if (pollInterval) clearInterval(pollInterval);
 
             // Desactivar todos los ítems del menú
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -772,8 +815,23 @@
             }
         }
 
+        // --- WHATSAPP ---
+        let pollInterval = null;
+
+        async function pollWhatsAppStatus() {
+            // --- WHATSAPP FUNCTIONS REMOVED (Moved to /channels) ---
+        }
+        
         // Carga Inicial
         loadProducts();
+        // Check URL params for section
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get('section');
+        if (section) {
+            showSection(section);
+        } else {
+            showSection('products');
+        }
     </script>
 </body>
 

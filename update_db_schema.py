@@ -1,32 +1,36 @@
-from sqlalchemy import text
+from sqlmodel import Session, text
 from app.database import engine
 
 def update_schema():
-    print("Updating database schema...")
-    with engine.connect() as connection:
-        # Add first_name column
+    with Session(engine) as session:
+        print("Adding SMTP columns to company_settings...")
         try:
-            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR"))
-            print("Added first_name column.")
-        except Exception as e:
-            print(f"Error adding first_name: {e}")
+            session.exec(text("ALTER TABLE company_settings ADD COLUMN smtp_host VARCHAR"))
+            print("Added smtp_host")
+        except Exception as e: print(f"smtp_host might exist: {e}")
 
-        # Add last_name column
         try:
-            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR"))
-            print("Added last_name column.")
-        except Exception as e:
-            print(f"Error adding last_name: {e}")
+            session.exec(text("ALTER TABLE company_settings ADD COLUMN smtp_port INTEGER"))
+            print("Added smtp_port")
+        except Exception as e: print(f"smtp_port might exist: {e}")
 
-        # Add phone column
         try:
-            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR"))
-            print("Added phone column.")
-        except Exception as e:
-            print(f"Error adding phone: {e}")
+            session.exec(text("ALTER TABLE company_settings ADD COLUMN smtp_user VARCHAR"))
+            print("Added smtp_user")
+        except Exception as e: print(f"smtp_user might exist: {e}")
+
+        try:
+            session.exec(text("ALTER TABLE company_settings ADD COLUMN smtp_password VARCHAR"))
+            print("Added smtp_password")
+        except Exception as e: print(f"smtp_password might exist: {e}")
+
+        try:
+            session.exec(text("ALTER TABLE company_settings ADD COLUMN smtp_from_email VARCHAR"))
+            print("Added smtp_from_email")
+        except Exception as e: print(f"smtp_from_email might exist: {e}")
         
-        connection.commit()
-    print("Schema update complete.")
+        session.commit()
+        print("Schema update complete.")
 
 if __name__ == "__main__":
     update_schema()

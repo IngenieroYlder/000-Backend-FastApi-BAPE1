@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 from datetime import datetime
 
 # Esquemas de Tokens
@@ -9,6 +9,20 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+class CompanyBase(BaseModel):
+    name: str
+
+class CompanyCreate(CompanyBase):
+    pass
+
+class Company(CompanyBase):
+    id: int
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 # Esquemas de Usuario
 class UserBase(BaseModel):
@@ -20,6 +34,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserRegister(UserCreate):
+    company_name: str
+
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     first_name: Optional[str] = None
@@ -30,7 +47,9 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     id: int
     is_active: bool
-    created_at: datetime 
+    created_at: datetime
+    role: str
+    company_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -112,5 +131,19 @@ class Service(ServiceBase):
     created_at: datetime
     category_rel: Optional[ServiceCategory] = None
 
-    class Config:
-        from_attributes = True
+class CompanySettingsUpdate(BaseModel):
+    system_prompt: Optional[str] = None
+    golden_rules: Optional[str] = None
+    openai_api_key: Optional[str] = None
+    groq_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+    telegram_token: Optional[str] = None
+    verify_token: Optional[str] = None
+    facebook_page_id: Optional[str] = None
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_email: Optional[str] = None
+    whitelisted_ips: Optional[Dict[str, Any]] = None
+    session_timeout_hours: Optional[int] = None

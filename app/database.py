@@ -1,20 +1,11 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlmodel import SQLModel, create_engine, Session
 from app.config import settings
 
-SQL_ALCHEMY_DATABASE_URL = settings.DATABASE_URL.replace("%", "%%") # Escape básico si es necesario, aunque psycopg2 maneja la mayoría
-
-# Para versiones más nuevas de SQLAlchemy, considera usar el objeto URL, pero string está bien por ahora según requisitos
+# SQLModel uses SQLAlchemy under the hood, so create_engine works the same
 engine = create_engine(settings.DATABASE_URL)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
-
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    with Session(engine) as session:
+        yield session
+
+get_session = get_db

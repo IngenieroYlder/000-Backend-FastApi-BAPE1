@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandeja de Entrada - BAPE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --sidebar-bg: #2c3e50;
+            --sidebar-text: #ecf0f1;
+            --chat-list-bg: #f8f9fa;
+            --message-bg-sent: #3498db;
+            --message-text-sent: white;
+            --message-bg-received: #e9ecef;
+            --message-text-received: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            background-color: #fff;
+            overflow: hidden;
+        }
+
+        /* 1. Unified Sidebar */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .sidebar h2 { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            color: white; 
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        .menu-item-sidebar { 
+            padding: 12px 15px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            margin-bottom: 8px; 
+            text-decoration: none; 
+            color: #ecf0f1; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            font-weight: 500;
+        }
+        .menu-item-sidebar i {
+            width: 20px;
+            text-align: center;
+        }
+        .menu-item-sidebar:hover { 
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .menu-item-sidebar.active { 
+            background-color: var(--primary-color); 
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .btn-logout {
+            margin-top: auto;
+            background-color: #e74c3c;
+            color: white;
+            justify-content: center;
+        }
+        .btn-logout:hover {
+            background-color: #c0392b;
+            transform: none;
+        }
+
+        /* 2. Chat List Sidebar */
+        .chat-sidebar {
+            width: 350px;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-filters {
+            padding: 10px 15px;
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            border-bottom: 1px solid #eee;
+        }
+
+        .filter-chip {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            background-color: #f1f3f5;
+            color: #555;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .filter-chip.active {
+            background-color: #ebf5fb;
+            color: var(--primary-color);
+            border-color: #aed6f1;
+            font-weight: 600;
+        }
+
+        .platform-tabs {
+            display: flex;
+            padding: 5px 15px;
+            border-bottom: 1px solid #eee;
+            gap: 15px;
+        }
+        
+        .platform-tab {
+            font-size: 13px;
+            color: #7f8c8d;
+            cursor: pointer;
+            padding-bottom: 5px;
+        }
+        
+        .platform-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            display: flex;
+            padding: 15px;
+            border-bottom: 1px solid #f1f1f1;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .chat-item:hover, .chat-item.active {
+            background-color: #f8f9fa;
+        }
+        
+        .chat-item.active {
+            background-color: #e8f4fc;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #bdc3c7;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .chat-info {
+            flex: 1;
+        }
+
+        .chat-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .chat-preview {
+            font-size: 13px;
+            color: #7f8c8d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+        
+        .chat-meta {
+            font-size: 11px;
+            color: #95a5a6;
+            text-align: right;
+        }
+        
+        .platform-icon {
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .fa-whatsapp { color: #25D366; }
+        .fa-telegram { color: #0088cc; }
+        .fa-instagram { color: #C13584; }
+        .fa-facebook-messenger { color: #00B2FF; }
+
+        /* 3. Conversation Area */
+        .conversation-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+        }
+
+        .conversation-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .user-details p {
+            margin: 2px 0 0;
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .status-badge {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f7f9fa;
+        }
+
+        .message-row {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .message-row.sent {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 60%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .message-row.received .message-bubble {
+            background-color: var(--message-bg-received);
+            color: var(--message-text-received);
+            border-top-left-radius: 0;
+        }
+
+        .message-row.sent .message-bubble {
+            background-color: var(--message-bg-sent);
+            color: var(--message-text-sent);
+            border-top-right-radius: 0;
+        }
+
+        .message-time {
+            font-size: 10px;
+            margin-top: 5px;
+            text-align: right;
+            opacity: 0.7;
+        }
+
+        .input-area {
+            padding: 20px;
+            background-color: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            resize: none;
+            height: 20px;
+            max-height: 100px;
+            font-family: inherit;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-size: 18px;
+            padding: 10px;
+            transition: color 0.2s;
+        }
+        
+        .btn-icon:hover {
+            color: var(--primary-color);
+        }
+        
+        .btn-send {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-send:hover {
+            background-color: #2980b9;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-sidebar {
+                width: 100%;
+                display: none; /* Logic needed to toggle */
+            }
+            .conversation-area.active {
+                display: flex;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Unified Sidebar -->
+    <div class="sidebar">
+        <h2>BAPE Panel</h2>
+        <a href="/inbox" class="menu-item-sidebar active">
+            <i class="fas fa-inbox"></i> Bandeja
+        </a>
+        <a href="/calendar" class="menu-item-sidebar">
+            <i class="fas fa-calendar-alt"></i> Calendario
+        </a>
+        <a href="/dashboard?section=products" class="menu-item-sidebar">
+            <i class="fas fa-box"></i> Productos
+        </a>
+        <a href="/dashboard?section=services" class="menu-item-sidebar">
+            <i class="fas fa-concierge-bell"></i> Servicios
+        </a>
+        <a href="/dashboard?section=categories" class="menu-item-sidebar">
+            <i class="fas fa-tags"></i> Categorías
+        </a>
+        <a href="/dashboard?section=users" class="menu-item-sidebar">
+            <i class="fas fa-users-cog"></i> Usuarios
+        </a>
+        <a href="/channels" class="menu-item-sidebar">
+            <i class="fas fa-comments"></i> Canales
+        </a>
+        <a href="/contacts" class="menu-item-sidebar">
+            <i class="fas fa-users"></i> Clientes
+        </a>
+        <a href="/settings" class="menu-item-sidebar">
+            <i class="fas fa-cog"></i> Ajustes
+        </a>
+        <div class="menu-item-sidebar btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </div>
+    </div>
+
+    <!-- 2. Chat List -->
+    <div class="chat-sidebar">
+        <div class="chat-header">
+            <h2 style="margin: 0; font-size: 18px;">Chats <span style="background: #e1f0fa; color: #3498db; padding: 2px 8px; border-radius: 10px; font-size: 12px; cursor: pointer;" onclick="loadChats()">↻</span></h2>
+            <div style="font-size: 14px; color: #7f8c8d;">
+                <span style="font-weight: bold; color: var(--primary-color); margin-right: 10px;">Todos</span>
+            </div>
+        </div>
+        
+        <div class="chat-filters">
+            <div class="filter-chip active" onclick="setFilter('all')"><i class="fas fa-filter"></i> Todos</div>
+            <div class="filter-chip" onclick="setFilter('paused')"><i class="fas fa-pause"></i> Pausados</div>
+        </div>
+        
+        <div class="platform-tabs">
+            <div class="platform-tab active" onclick="setFilter('whatsapp')"><i class="fab fa-whatsapp"></i> WhatsApp</div>
+            <div class="platform-tab" onclick="setFilter('telegram')"><i class="fab fa-telegram-plane"></i> Telegram</div>
+            <div class="platform-tab" onclick="setFilter('instagram')"><i class="fab fa-instagram"></i> Instagram</div>
+        </div>
+
+        <div class="chat-list" id="chatList">
+            <div style="padding: 20px; text-align: center; color: #aaa;">Cargando chats...</div>
+        </div>
+    </div>
+
+    <!-- 3. Conversation Area -->
+    <div class="conversation-area">
+        <!-- Header -->
+        <div class="conversation-header">
+            <div style="display: flex; align-items: center;">
+                <div id="header-avatar" class="avatar" style="background-color: #bdc3c7; width: 40px; height: 40px; font-size: 16px;">?</div>
+                <div class="user-details" style="margin-left: 10px;">
+                    <h3><span id="header-name">Selecciona un chat</span> <span style="font-size: 14px; font-weight: normal; color: #555;" id="header-phone"></span></h3>
+                    <p>WHATSAPP</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="status-badge" id="status-badge">BOT AUTO</div>
+                <button id="pause-btn" class="btn-icon" style="background-color: #f39c12; color: white; border-radius: 4px; padding: 5px 10px; font-size: 12px; margin-left: 10px; width: auto; height: auto;">Pausar</button>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-container" id="messagesContainer">
+            <div style="display: flex; height: 100%; align-items: center; justify-content: center; color: #ccc;">
+                <p>Selecciona una conversación para ver los mensajes</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <textarea id="input-msg" class="message-input" placeholder="Selecciona un chat para escribir..." disabled></textarea>
+            <button class="btn-send" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
+        async function fetchAPI(url, method = 'GET', body = null) {
+            const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+            const response = await fetch(url, options);
+            if (response.status === 401) logout();
+            return response;
+        }
+
+        let currentContactId = null;
+        let allContacts = [];
+        let currentFilter = 'all'; // all, paused, whatsapp, telegram...
+
+        // --- CHAT LIST ---
+        async function loadChats() {
+            const res = await fetchAPI('/chats/');
+            if (res.ok) {
+                allContacts = await res.json();
+                renderChatList();
+            }
+        }
+        
+        function renderChatList() {
+            const list = document.getElementById('chatList');
+            let filtered = allContacts;
+            
+            if (currentFilter === 'paused') {
+                filtered = allContacts.filter(c => c.is_paused);
+            } else if (['whatsapp', 'telegram', 'instagram', 'messenger'].includes(currentFilter)) {
+                filtered = allContacts.filter(c => c.platform === currentFilter);
+            }
+            
+            list.innerHTML = filtered.map(c => `
+                <div class="chat-item ${currentContactId === c.id ? 'active' : ''}" onclick="selectChat(${c.id})">
+                    <div class="avatar" style="background-color: #3498db;">${(c.name || c.phone).substring(0, 2).toUpperCase()}</div>
+                    <div class="chat-info">
+                        <div class="chat-name">
+                            ${c.name || c.phone} 
+                            <span class="chat-meta">
+                                ${c.is_paused ? '<i class="fas fa-pause-circle" style="color: #f39c12;" title="Bot Pausado"></i>' : ''}
+                                <i class="fab fa-${c.platform || 'whatsapp'} platform-icon"></i>
+                            </span>
+                        </div>
+                        <div class="chat-preview">${c.phone}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-chip, .platform-tab').forEach(el => el.classList.remove('active'));
+            
+            // simple active state toggle logic (can be improved)
+            event.currentTarget.classList.add('active');
+            renderChatList();
+        }
+
+        // --- MESSAGES ---
+        async function selectChat(id) {
+            const contact = allContacts.find(c => c.id === id);
+            if(!contact) return;
+            
+            currentContactId = id;
+            renderChatList(); // Update active state
+
+            // Update Header
+            document.getElementById('header-name').innerText = contact.name || contact.phone;
+            document.getElementById('header-phone').innerText = contact.phone;
+            document.getElementById('header-avatar').innerText = (contact.name || contact.phone).substring(0, 2).toUpperCase();
+            
+            // Update Status Badge & Logic
+            const badge = document.getElementById('status-badge');
+            const pauseBtn = document.getElementById('pause-btn');
+            
+            if (contact.is_paused) {
+                badge.innerText = "BOT PAUSADO";
+                badge.style.backgroundColor = "#f39c12";
+                badge.style.color = "white";
+                pauseBtn.innerText = "Reanudar Bot";
+                pauseBtn.onclick = () => togglePause(id, false);
+                
+                document.getElementById('input-msg').disabled = false;
+                document.getElementById('input-msg').placeholder = "Escribe una respuesta manual...";
+            } else {
+                badge.innerText = "BOT AUTO";
+                badge.style.backgroundColor = "#d4edda";
+                badge.style.color = "#155724";
+                pauseBtn.innerText = "Pausar Bot";
+                pauseBtn.onclick = () => togglePause(id, true);
+                
+                // Optional: Disable input if bot is active to prevent interference? 
+                // Creating a simplified logic: Input always active but visually distinct
+                document.getElementById('input-msg').disabled = false;
+                document.getElementById('input-msg').placeholder = "Escribe un mensaje...";
+            }
+            
+            // Load Messages
+            await loadMessages(id);
+        }
+        
+        async function togglePause(contactId, pause) {
+            const res = await fetchAPI(`/chats/${contactId}/pause`, 'POST', { paused: pause });
+            if (res.ok) {
+                loadChats(); // Reload logs to update internal state
+                // Hack: Wait a bit for loadChats to finish or manually update local state
+                const contact = allContacts.find(c => c.id === contactId);
+                if(contact) contact.is_paused = pause;
+                selectChat(contactId); // Re-render header
+            }
+        }
+
+        async function loadMessages(contactId) {
+            const res = await fetchAPI(`/chats/${contactId}/messages`);
+            if (res.ok) {
+                const messages = await res.json();
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = messages.map(m => `
+                    <div class="message-row ${m.role === 'user' ? 'received' : 'sent'}">
+                        <div class="message-bubble">
+                            ${m.content}
+                            <div class="message-time">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </div>
+                    </div>
+                `).join('');
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // --- SEND ---
+        document.getElementById('input-msg').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        async function sendMessage() {
+            const input = document.getElementById('input-msg');
+            const content = input.value.trim();
+            if (!content || !currentContactId) return;
+            
+            const res = await fetchAPI(`/chats/${currentContactId}/send`, 'POST', { content });
+            if (res.ok) {
+                input.value = '';
+                await loadMessages(currentContactId);
+            } else {
+                alert("Error al enviar mensaje");
+            }
+        }
+
+        // Initial Load
+        loadChats();
+        setInterval(() => {
+            // refresh filtered list
+             loadChats(); 
+             if(currentContactId) {
+                 loadMessages(currentContactId);
+             }
+        }, 5000);
+
+    </script>
+</body>
+</html>

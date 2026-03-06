@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAPE - CRM Clientes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+            position: fixed;
+        }
+
+        .sidebar h2 { text-align: center; margin-bottom: 30px; }
+        .menu-item { 
+            padding: 12px 15px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            margin-bottom: 8px; 
+            text-decoration: none; 
+            color: #ecf0f1; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            font-weight: 500;
+        }
+        .menu-item:hover { background-color: var(--secondary-color); transform: translateX(5px); }
+        .menu-item.active { background-color: var(--accent-color); }
+        .btn-logout { margin-top: auto; background-color: var(--danger-color); justify-content: center; }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            width: 400px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 2px solid #eee;
+            color: #7f8c8d;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .platform-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .whatsapp { background: #dcf8c6; color: #075e54; }
+        .telegram { background: #e3f2fd; color: #1976d2; }
+        .instagram { background: #fce4ec; color: #c2185b; }
+
+        .tag {
+            background: #eee;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-edit { background: var(--accent-color); color: white; }
+        .btn-exclude { background: #f39c12; color: white; }
+        .btn-include { background: var(--success-color); color: white; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 500px;
+            max-width: 90%;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>BAPE Panel</h2>
+        <a href="/inbox" class="menu-item"><i class="fas fa-inbox"></i> Bandeja</a>
+        <a href="/calendar" class="menu-item"><i class="fas fa-calendar-alt"></i> Calendario</a>
+        <a href="/dashboard?section=products" class="menu-item"><i class="fas fa-box"></i> Productos</a>
+        <a href="/dashboard?section=services" class="menu-item"><i class="fas fa-concierge-bell"></i> Servicios</a>
+        <a href="/dashboard?section=categories" class="menu-item"><i class="fas fa-tags"></i> Categorías</a>
+        <a href="/dashboard?section=users" class="menu-item"><i class="fas fa-users-cog"></i> Usuarios</a>
+        <a href="/channels" class="menu-item"><i class="fas fa-comments"></i> Canales</a>
+        <a href="/contacts" class="menu-item active"><i class="fas fa-users"></i> Clientes</a>
+        <a href="/settings" class="menu-item"><i class="fas fa-cog"></i> Ajustes</a>
+        <div class="menu-item btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>CRM Clientes</h1>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o teléfono..." oninput="debouncedLoad()">
+                </div>
+                <button class="btn-action btn-include" onclick="openCreateModal()" style="height: 45px; border-radius: 30px; padding: 0 25px;">
+                    <i class="fas fa-plus"></i> Nuevo Cliente
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Plataforma</th>
+                        <th>Etiquetas</th>
+                        <th>Estado Bot</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="contactsTableBody">
+                    <!-- Dynamic Content -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit Contact Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Editar Cliente</h2>
+            <form id="editForm">
+                <input type="hidden" id="editContactId">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="editName">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="editEmail">
+                    </div>
+                    <div class="form-group">
+                        <label>Documento ID</label>
+                        <input type="text" id="editDocId" placeholder="DNI/Cédula">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Empresa</label>
+                        <input type="text" id="editCompany">
+                    </div>
+                    <div class="form-group">
+                        <label>Cargo</label>
+                        <input type="text" id="editJob">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="editAddress">
+                    </div>
+                    <div class="form-group">
+                        <label>Cumpleaños</label>
+                        <input type="text" id="editBirthday" placeholder="Ej: 15 de Marzo">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Etiquetas (separadas por coma)</label>
+                    <input type="text" id="editTags">
+                </div>
+                <div class="form-group">
+                    <label>Notas Internas</label>
+                    <textarea id="editNotes" rows="3"></textarea>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn-action" onclick="closeModal()" style="background:#eee">Cancelar</button>
+                    <button type="submit" class="btn-action btn-edit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Contact Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <h2>Registrar Nuevo Cliente</h2>
+            <form id="createForm">
+                <div class="form-group">
+                    <label>Teléfono (con código de país, ej: 57300...)</label>
+                    <input type="text" id="createPhone" required placeholder="57123456789">
+                </div>
+                <div class="form-group">
+                    <label>Nombre (Opcional)</label>
+                    <input type="text" id="createName" placeholder="Juan Perez">
+                </div>
+                <div class="form-group">
+                    <label>Plataforma</label>
+                    <select id="createPlatform" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd">
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="telegram">Telegram</option>
+                        <option value="web">Web</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="createEmail">
+                    </div>
+                    <div class="form-group">
+                        <label>Documento ID</label>
+                        <input type="text" id="createDocId">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="createAddress">
+                    </div>
+                    <div class="form-group">
+                        <label>Cumpleaños</label>
+                        <input type="text" id="createBirthday">
+                    </div>
+                </div>
+                <div style="margin-top:10px">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer">
+                        <input type="checkbox" id="createExcluded"> Excluir de respuestas del bot
+                    </label>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn-action" onclick="closeCreateModal()" style="background:#eee">Cancelar</button>
+                    <button type="submit" class="btn-action btn-include">Crear Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
+        let debounceTimer;
+        function debouncedLoad() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(loadContacts, 500);
+        }
+
+        async function loadContacts() {
+            const search = document.getElementById('searchInput').value;
+            const url = `/api/contacts/?search=${encodeURIComponent(search)}`;
+            
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const contacts = await res.json();
+                renderContacts(contacts);
+            } catch (err) {
+                console.error("Error loading contacts:", err);
+            }
+        }
+
+        function renderContacts(contacts) {
+            const tbody = document.getElementById('contactsTableBody');
+            tbody.innerHTML = '';
+
+            contacts.forEach(c => {
+                const tagsHtml = (c.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+                const platformClass = c.platform.toLowerCase();
+                const botStatus = c.is_excluded ? 
+                    '<span style="color:var(--danger-color)"><i class="fas fa-robot"></i> Excluido</span>' : 
+                    '<span style="color:var(--success-color)"><i class="fas fa-robot"></i> Activo</span>';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="font-weight:bold">${c.name || 'Sin nombre'}</div>
+                        <div style="font-size:12px; color:#7f8c8d">${c.phone}</div>
+                    </td>
+                    <td><span class="platform-badge ${platformClass}">${c.platform}</span></td>
+                    <td>${tagsHtml}</td>
+                    <td>${botStatus}</td>
+                    <td>
+                        <button class="btn-action btn-edit" onclick='openModal(${JSON.stringify(c)})'><i class="fas fa-edit"></i></button>
+                        <button class="btn-action ${c.is_excluded ? 'btn-include' : 'btn-exclude'}" 
+                                onclick="toggleExclusion(${c.id}, ${c.is_excluded})">
+                            <i class="fas ${c.is_excluded ? 'fa-play' : 'fa-stop'}"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openModal(contact) {
+            document.getElementById('editContactId').value = contact.id;
+            document.getElementById('editName').value = contact.name || '';
+            document.getElementById('editEmail').value = contact.email || '';
+            document.getElementById('editDocId').value = contact.document_id || '';
+            document.getElementById('editCompany').value = contact.company_name || '';
+            document.getElementById('editJob').value = contact.job_title || '';
+            document.getElementById('editAddress').value = contact.address || '';
+            document.getElementById('editBirthday').value = contact.birthday || '';
+            document.getElementById('editTags').value = (contact.tags || []).join(', ');
+            document.getElementById('editNotes').value = contact.internal_notes || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function openCreateModal() {
+            document.getElementById('createForm').reset();
+            document.getElementById('createModal').style.display = 'flex';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+        }
+
+        document.getElementById('createForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('createPhone').value.trim();
+            const name = document.getElementById('createName').value.trim();
+            const platform = document.getElementById('createPlatform').value;
+            const is_excluded = document.getElementById('createExcluded').checked;
+            
+            const email = document.getElementById('createEmail').value.trim();
+            const address = document.getElementById('createAddress').value.trim();
+            const birthday = document.getElementById('createBirthday').value.trim();
+            const document_id = document.getElementById('createDocId').value.trim();
+
+            const queryParams = new URLSearchParams({
+                phone,
+                name,
+                platform,
+                is_excluded,
+                email,
+                address,
+                birthday,
+                document_id
+            });
+
+            try {
+                const res = await fetch(`/api/contacts/?${queryParams.toString()}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    closeCreateModal();
+                    loadContacts();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || "Error al crear contacto");
+                }
+            } catch (err) {
+                console.error("Error creating contact:", err);
+            }
+        };
+
+        document.getElementById('editForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editContactId').value;
+            const tags = document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(t => t !== '');
+            
+            const data = {
+                name: document.getElementById('editName').value,
+                email: document.getElementById('editEmail').value,
+                document_id: document.getElementById('editDocId').value,
+                company_name: document.getElementById('editCompany').value,
+                job_title: document.getElementById('editJob').value,
+                address: document.getElementById('editAddress').value,
+                birthday: document.getElementById('editBirthday').value,
+                tags: tags,
+                internal_notes: document.getElementById('editNotes').value
+            };
+
+            try {
+                await fetch(`/api/contacts/${id}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                closeModal();
+                loadContacts();
+            } catch (err) {
+                console.error("Error updating contact:", err);
+            }
+        };
+
+        async function toggleExclusion(id, current) {
+            try {
+                await fetch(`/api/contacts/${id}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ is_excluded: !current })
+                });
+                loadContacts();
+            } catch (err) {
+                console.error("Error toggling exclusion:", err);
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) closeModal();
+        }
+
+        loadContacts();
+    </script>
+</body>
+</html>
