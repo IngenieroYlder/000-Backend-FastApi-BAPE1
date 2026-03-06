@@ -8,6 +8,7 @@ from googleapiclient.discovery import build
 from sqlmodel import Session, select
 from app.database import engine
 from app.models import AppointmentConfig, CompanySettings
+from app.config import settings
 from dateutil import parser
 import json
 import pytz
@@ -113,13 +114,13 @@ class CalendarService:
         List events from Google Calendar.
         :param db: Optional session to reuse for token update.
         """
-        with open('calendar_debug.log', 'a') as f:
+        with open(settings.CALENDAR_DEBUG_LOG, 'a', encoding='utf-8') as f:
             f.write(f"\n[{datetime.datetime.now()}] Listing events: {start_time} to {end_time}\n")
             f.write(f"Config: ID={config.id}, GID={config.google_calendar_id}\n")
             
         creds = self.get_credentials(config, db=db)
         if not creds:
-            with open('calendar_debug.log', 'a') as f: f.write("No credentials found\n")
+            with open(settings.CALENDAR_DEBUG_LOG, 'a', encoding='utf-8') as f: f.write("No credentials found\n")
             return []
             
         try:
@@ -136,7 +137,7 @@ class CalendarService:
 
             t_min = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
             t_max = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
-            with open('calendar_debug.log', 'a') as f: f.write(f"Querying GCal: {t_min} to {t_max}\n")
+            with open(settings.CALENDAR_DEBUG_LOG, 'a', encoding='utf-8') as f: f.write(f"Querying GCal: {t_min} to {t_max}\n")
 
             service = build('calendar', 'v3', credentials=creds, static_discovery=False)
             
@@ -151,10 +152,10 @@ class CalendarService:
             ).execute(num_retries=2)
             
             items = events_result.get('items', [])
-            with open('calendar_debug.log', 'a') as f: f.write(f"Found {len(items)} items\n")
+            with open(settings.CALENDAR_DEBUG_LOG, 'a', encoding='utf-8') as f: f.write(f"Found {len(items)} items\n")
             return items
         except Exception as e:
-            with open('calendar_debug.log', 'a') as f: f.write(f"Error listing events: {str(e)}\n")
+            with open(settings.CALENDAR_DEBUG_LOG, 'a', encoding='utf-8') as f: f.write(f"Error listing events: {str(e)}\n")
             print(f"Error listing events: {e}")
             return []
 

@@ -5,6 +5,7 @@ from app.models import Message, MessageRole, MessageType, Company, Contact, What
 import logging
 from datetime import datetime
 from app.services.qr_cache import qr_cache
+from app.config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ async def handle_webhook(request: Request, background_tasks: BackgroundTasks, se
         event = payload.get("event")
         session_name = payload.get("session_name")
         
-        with open('webhook_debug.log', 'a') as f:
+        with open(settings.WEBHOOK_DEBUG_LOG, 'a', encoding='utf-8') as f:
             f.write(f"[{datetime.now()}] Event: {event} | Session: {session_name}\n")
         
         logger.info(f"Received webhook event: {event} for session: {session_name}")

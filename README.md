@@ -98,3 +98,15 @@ El proyecto incluye un `Dockerfile` optimizado.
 - Se han separado las categorías en dos tablas: `product_categories` y `service_categories`.
 
 
+
+## Organizacion de Archivos (2026)
+- `docs/`: Documentacion tecnica, API, despliegue y referencias.
+- `scripts/db/`: Scripts de esquema, seed y mantenimiento de base de datos.
+- `scripts/checks/`: Scripts de verificacion de estado y diagnostico.
+- `scripts/debug/`: Scripts de depuracion manual.
+- `scripts/maintenance/`: Utilidades de soporte y correcciones puntuales.
+- `scripts/run/`: Scripts de arranque/parada.
+- `scripts/tests/manual/`: Pruebas manuales de conectividad y proveedores.
+- `var/`: Datos y logs de runtime (ignorado por git).
+
+Se mantienen wrappers en la raiz para `start_*.cmd`, `start_*.ps1`, `stop_services.ps1`, `kill_all.ps1` y `start_public.py` para no romper flujos actuales.

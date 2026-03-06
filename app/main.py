@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.routers import auth_routes as auth, frontend_routes, whatsapp_routes, webhooks, chat_routes, settings_routes
 from app.database import engine
+from app.config import settings
 from fastapi.templating import Jinja2Templates
 
 app = FastAPI(title="BAPE Backend")
@@ -65,9 +66,9 @@ async def startup_event():
     logger = logging.getLogger(__name__)
 
     # Emergency Fallback Pre-population
-    if os.path.exists("emergency_sessions.json"):
+    if settings.EMERGENCY_SESSIONS_FILE.exists():
         try:
-            with open("emergency_sessions.json", "r") as f:
+            with settings.EMERGENCY_SESSIONS_FILE.open("r", encoding="utf-8") as f:
                 emergency_data = json.load(f)
                 for s in emergency_data:
                     qr_cache.update_metadata(s["session_name"], s)

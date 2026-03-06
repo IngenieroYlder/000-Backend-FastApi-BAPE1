@@ -33,3 +33,11 @@ docker-compose.override.yml
 .idea/
 .vscode/
 *.swp
+
+# Runtime artifacts
+android_app/.gradle/
+baileys_engine/node_modules/
+baileys_engine/sessions/
+baileys_engine/media/
+static/uploads/
+/=

@@ -83,7 +83,7 @@ La base de datos se crea vacía. Debes crear las tablas y el usuario administrad
 
 3.  **Crear Admin**: Ejecuta el script de creación.
     ```bash
-    python create_admin.py
+    python scripts/db/create_admin.py
     ```
     *(Crea usuario: admin@bape.com / contraseña: admin)*
 

@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app import models, auth
 from app.services.calendar_service import calendar_service
+from app.config import settings
 from typing import Dict, Optional
 from pydantic import BaseModel, EmailStr
 import os
@@ -267,7 +268,7 @@ def list_appointments(
     stmt_conf = select(models.AppointmentConfig).where(models.AppointmentConfig.company_id == current_user.company_id)
     config = db.exec(stmt_conf).first()
     
-    with open('calendar_debug.log', 'a') as f:
+    with open(settings.CALENDAR_DEBUG_LOG, 'a', encoding='utf-8') as f:
         f.write(f"Config found: {config is not None}\n")
         if config:
             f.write(f"Has token: {config.google_refresh_token is not None}\n")
@@ -303,7 +304,7 @@ def list_appointments(
                         "client_email": ge.get('creator', {}).get('email')
                     })
         except Exception as e:
-            with open('calendar_debug.log', 'a') as f:
+            with open(settings.CALENDAR_DEBUG_LOG, 'a', encoding='utf-8') as f:
                 f.write(f"Error in list_appointments GSync: {str(e)}\n")
             print(f"[Calendar Sync Error] {str(e)}")
             

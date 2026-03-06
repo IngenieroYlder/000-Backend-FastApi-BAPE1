@@ -1,9 +1,19 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 class Settings:
+    PROJECT_ROOT = BASE_DIR
+    VAR_DIR = PROJECT_ROOT / "var"
+    LOG_DIR = VAR_DIR / "logs"
+    DATA_DIR = VAR_DIR / "data"
+    CALENDAR_DEBUG_LOG = LOG_DIR / "calendar_debug.log"
+    WEBHOOK_DEBUG_LOG = LOG_DIR / "webhook_debug.log"
+    EMERGENCY_SESSIONS_FILE = DATA_DIR / "emergency_sessions.json"
+
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "n8n_bape")
     POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
     POSTGRES_DB = os.getenv("POSTGRES_DB", "BAPE_BD")
@@ -34,4 +44,6 @@ class Settings:
     REMINDER_HOURS_BEFORE = int(os.getenv("REMINDER_HOURS_BEFORE", 1))
 
 settings = Settings()
+settings.LOG_DIR.mkdir(parents=True, exist_ok=True)
+settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
 BAILEYS_ENGINE_URL = "http://127.0.0.1:3005"
