@@ -20,3 +20,4 @@ google-auth-httplib2
 python-dateutil
 pyngrok
 google-generativeai
+pytz
