@@ -28,10 +28,27 @@ services:
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=BAPE_BD
       - SECRET_KEY=changethis_to_a_secure_random_string
-      # Override the host to point to the db service name
       - POSTGRES_HOST=db
+      # Make sure the API knows how to reach the Baileys Engine (Service name)
+      - BAILEYS_URL=http://baileys:3005
     depends_on:
       - db
+    restart: always
+
+  baileys:
+    build: ./baileys_engine
+    container_name: bape_baileys
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./baileys_engine:/app
+      - /app/node_modules # Prevents local node_modules from overriding container's
+    environment:
+      - PORT=3005
+      # Make sure the Engine knows how to reach the API webhook (Service name)
+      - WEBHOOK_URL=http://api:8000/webhook
+    depends_on:
+      - api
     restart: always
 
 volumes:
