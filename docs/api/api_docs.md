@@ -8,107 +8,87 @@
 All protected endpoints require a Bearer Token.
 Header: `Authorization: Bearer <your_token>`
 
-### 1. Login
+## 1. Auth & Users
+### Register
+**Endpoint:** `POST /auth/register`
+**Body (JSON):** `{"email": "admin@bape.com", "password": "admin"}`
+
+### Login
 **Endpoint:** `POST /auth/login`
-**Body (form-data):**
-- `username`: (string) Email of the user (e.g., `admin@bape.com`)
-- `password`: (string) Password
-**Response:**
-```json
-{
-    "access_token": "eyJhbG...",
-    "token_type": "bearer"
-}
-```
+**Body (form-data):** `username` and `password`
+**Response:** `{"access_token": "...", "token_type": "bearer"}`
 
-## Products
-### 2. List Products
-**Endpoint:** `GET /products/`
-**Auth:** Required
+### Users Management (Admin)
+- `GET /users/` : List all users
+- `POST /users/` : Create new user
+- `GET /users/{id}` : Get user details
+- `PUT /users/{id}` : Update user details
+- `PUT /users/{id}/status?is_active=true` : Toggle status
+- `DELETE /users/{id}` : Delete user
 
-### 3. Create Product
-**Endpoint:** `POST /products/`
-**Auth:** Required
-**Body (JSON):**
-```json
-{
-    "name": "Pantalón Blue Jean",
-    "price": 50000.0,
-    "stock": 100,
-    "category_id": 1,
-    "image": "http://image.url",
-    "short_description": "Jeans clásicos",
-    "long_description": "<p>Detalles...</p>",
-    "gallery_images": ["http://img1.jpg", "http://img2.jpg"]
-}
-```
+## 2. Products
+- `GET /products/` : List all products
+- `POST /products/` : Create a product
+- `GET /products/{id}` : Get product details
+- `PUT /products/{id}` : Update a product
+- `DELETE /products/{id}` : Delete a product
 
-### 4. Delete Product
-**Endpoint:** `DELETE /products/{id}`
-**Auth:** Required
+## 3. Services
+- `GET /services/` : List all services
+- `POST /services/` : Create a service
+- `GET /services/{id}` : Get service details
+- `PUT /services/{id}` : Update a service
+- `DELETE /services/{id}` : Delete a service
 
-## Services
-### 5. List Services
-**Endpoint:** `GET /services/`
-**Auth:** Required
+## 4. Categories
+- `GET /product-categories/` : List product categories
+- `POST /product-categories/` : Create product category
+- `DELETE /product-categories/{id}` : Delete product category
+- `GET /service-categories/` : List service categories
+- `POST /service-categories/` : Create service category
+- `DELETE /service-categories/{id}` : Delete service category
 
-### 6. Create Service
-**Endpoint:** `POST /services/`
-**Auth:** Required
-**Body (JSON):**
-```json
-{
-    "name": "Lavandería Express",
-    "price": 15000.0,
-    "category_id": 1,
-    "image": "http://image.url",
-    "short_description": "Lavado rápido",
-    "long_description": "<p>Detalles...</p>",
-    "gallery_images": []
-}
-```
+## 5. Settings (Company Settings)
+- `GET /settings/` : Get current company settings
+- `POST /settings/update` : Update settings (bot rules, prompts, AI keys)
+- `POST /settings/upload/branding` : Upload logo/branding images
+- `POST /settings/test-email` : Send test email
 
-### 7. Delete Service
-**Endpoint:** `DELETE /services/{id}`
-**Auth:** Required
+## 6. Contacts
+- `GET /contacts/` : List all contacts
+- `POST /contacts/` : Create a contact manually
+- `GET /contacts/{id}` : Get contact details
+- `PUT /contacts/{id}` : Update contact info/status (e.g. pause AI)
+- `DELETE /contacts/{id}` : Delete a contact
 
-## Categories
-### 8. List Product Categories
-**Endpoint:** `GET /product-categories/`
-**Auth:** Required
+## 7. Chat (Messaging)
+- `GET /chat/` : List active chats/contacts
+- `GET /chat/{contact_id}/messages` : Get message history for a contact
+- `POST /chat/{contact_id}/send` : Send manual message to contact
+- `POST /chat/{contact_id}/pause` : Pause/Resume AI for a specific contact
 
-### 9. Create Product Category
-**Endpoint:** `POST /product-categories/`
-**Auth:** Required
-**Body (JSON):** `{"name": "Nueva Categoría"}`
+## 8. WhatsApp Sessions & Webhooks
+- `GET /whatsapp/sessions` : List all WhatsApp sessions
+- `POST /whatsapp/sessions` : Create new session configuration
+- `POST /whatsapp/sessions/{id}/init` : Start/Init session to get QR
+- `DELETE /whatsapp/sessions/{id}` : Delete session
+- `POST /whatsapp/sessions/{id}/reset` : Reset session (fix Bad MAC)
+- `POST /whatsapp/sessions/{id}/repair` : Repair session
+- `POST /whatsapp/sessions/{id}/status` : Publish text status
+- `PUT /whatsapp/sessions/{id}/config` : Update session bot behavior
+- `POST /webhook` : Incoming webhook from Baileys Engine (QR, Messages, Ready)
 
-### 10. List Service Categories
-**Endpoint:** `GET /service-categories/`
-**Auth:** Required
-
-## Users (Admin)
-### 11. List Users
-**Endpoint:** `GET /users/`
-**Auth:** Required
-
-### 12. Create User
-**Endpoint:** `POST /users/`
-**Auth:** Required
-**Body (JSON):**
-```json
-{
-    "email": "nuevo@bape.com",
-    "password": "password123"
-}
-```
-
-### 13. Toggle User Status
-**Endpoint:** `PUT /users/{id}/status?is_active=true`
-**Auth:** Required
-
-### 14. Delete User
-**Endpoint:** `DELETE /users/{id}`
-**Auth:** Required
+## 9. Calendar & Appointments
+- `GET /calendar/auth-url` : Get Google Calendar OAuth URL
+- `GET /calendar/callback` : Google Calendar OAuth callback
+- `GET /calendar/settings` : Get calendar availability settings
+- `POST /calendar/settings` : Update calendar availability settings
+- `GET /calendar/availability` : Check available slots for a date
+- `POST /calendar/book` : Book an appointment (Public/Bot)
+- `GET /calendar/appointments` : List upcoming appointments
+- `PUT /calendar/appointments/{id}` : Update an appointment
+- `DELETE /calendar/appointments/{id}` : Cancel an appointment
+- `POST /calendar/manual-book` : Book manually from dashboard
 
 ---
 
