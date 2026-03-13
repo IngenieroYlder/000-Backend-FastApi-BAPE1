@@ -22,3 +22,5 @@ pyngrok
 google-generativeai
 pytz
 apscheduler
+mcp
+mcp[cli]
