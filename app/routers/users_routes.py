@@ -33,6 +33,10 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_session), cu
         raise HTTPException(status_code=400, detail="El correo electrónico ya está registrado")
     
     hashed_password = auth.get_password_hash(user.password)
+    role_val = UserRole.AGENT
+    if user.role and user.role.lower() == "admin":
+        role_val = UserRole.ADMIN
+
     new_user = models.User(
         email=user.email,
         password_hash=hashed_password,
@@ -40,7 +44,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_session), cu
         last_name=user.last_name,
         phone=user.phone,
         is_active=True,
-        role=UserRole.AGENT, # Default role for created users? Or pass in schema?
+        role=role_val,
         company_id=current_user.company_id # Force company_id
     )
     db.add(new_user)
@@ -82,6 +86,12 @@ def update_user(user_id: int, user_update: schemas.UserUpdate, db: Session = Dep
 
     if user_update.password:
         db_user.password_hash = auth.get_password_hash(user_update.password)
+
+    if user_update.role and is_admin:
+        if user_update.role.lower() == "admin":
+             db_user.role = UserRole.ADMIN
+        elif user_update.role.lower() == "agent":
+             db_user.role = UserRole.AGENT
 
     db.add(db_user)
     db.commit()

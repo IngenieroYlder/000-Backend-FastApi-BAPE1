@@ -422,6 +422,10 @@
                             <input type="text" id="userLastName" placeholder="Apellido">
                             <input type="text" id="userPhone" placeholder="Celular">
                             <input type="password" id="userPassword" placeholder="Contraseña" required>
+                            <select id="userRole" required>
+                                <option value="agent">Agente</option>
+                                <option value="admin">Administrador</option>
+                            </select>
                             <button type="submit" class="btn btn-primary" style="flex: 0 0 100px;">Crear</button>
                         </div>
                     </form>
@@ -434,6 +438,7 @@
                                 <th>Nombre Completo</th>
                                 <th>Email</th>
                                 <th>Celular</th>
+                                <th>Rol</th>
                                 <th>Estado</th>
                                 <th style="width: 250px;">Acciones</th>
                             </tr>
@@ -460,6 +465,14 @@
 
                             <label>Celular</label>
                             <div class="form-row"><input type="text" id="editUserPhone"></div>
+
+                            <label>Rol</label>
+                            <div class="form-row">
+                                <select id="editUserRole">
+                                    <option value="agent">Agente</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
 
                             <label>Nueva Contraseña (Opcional)</label>
                             <div class="form-row"><input type="password" id="editUserPassword"
@@ -719,6 +732,11 @@
                         <td>${u.email}</td>
                         <td>${u.phone || '-'}</td>
                         <td>
+                            <span style="padding: 2px 6px; border-radius: 4px; background-color: ${u.role === 'admin' || u.role === 'superadmin' ? '#cce5ff' : '#e2e3e5'}; color: ${u.role === 'admin' || u.role === 'superadmin' ? '#004085' : '#383d41'}; font-size: 0.85em;">
+                                ${u.role === 'admin' || u.role === 'superadmin' ? 'Administrador' : 'Agente'}
+                            </span>
+                        </td>
+                        <td>
                             <span style="padding: 4px 8px; border-radius: 4px; background-color: ${u.is_active ? '#d4edda' : '#f8d7da'}; color: ${u.is_active ? '#155724' : '#721c24'}; font-weight: bold;">
                                 ${u.is_active ? 'Activo' : 'Inactivo'}
                             </span>
@@ -742,7 +760,8 @@
                 first_name: document.getElementById('userFirstName').value,
                 last_name: document.getElementById('userLastName').value,
                 phone: document.getElementById('userPhone').value,
-                password: document.getElementById('userPassword').value
+                password: document.getElementById('userPassword').value,
+                role: document.getElementById('userRole').value
             };
 
             const res = await fetchAPI('/users/', 'POST', data);
@@ -765,6 +784,7 @@
             document.getElementById('editUserFirstName').value = user.first_name || '';
             document.getElementById('editUserLastName').value = user.last_name || '';
             document.getElementById('editUserPhone').value = user.phone || '';
+            document.getElementById('editUserRole').value = user.role === 'superadmin' ? 'admin' : (user.role || 'agent');
             document.getElementById('editUserPassword').value = ''; // Reset password field
 
             document.getElementById('editUserModal').classList.remove('hidden');
@@ -781,7 +801,8 @@
                 email: document.getElementById('editUserEmail').value,
                 first_name: document.getElementById('editUserFirstName').value,
                 last_name: document.getElementById('editUserLastName').value,
-                phone: document.getElementById('editUserPhone').value
+                phone: document.getElementById('editUserPhone').value,
+                role: document.getElementById('editUserRole').value
             };
 
             const newPass = document.getElementById('editUserPassword').value;

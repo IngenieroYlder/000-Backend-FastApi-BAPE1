@@ -33,6 +33,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    role: Optional[str] = "agent"
 
 class UserRegister(UserCreate):
     company_name: str
@@ -43,6 +44,7 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None
+    role: Optional[str] = None
 
 class User(UserBase):
     id: int
