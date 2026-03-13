@@ -99,7 +99,7 @@ flowchart TB
     SaaSAdmin[Dueño o Agente SaaS]:::client
 
     %% Frontera Externa / Red
-    subgraph Entorno de Despliegue (VPS Dokploy)
+    subgraph VPS[Entorno de Despliegue - VPS Dokploy]
 
         %% Capa de Presentación Dashboard
         subgraph Panel [Frontend HTML/JS BAPE]
@@ -166,7 +166,7 @@ mindmap
   root((Panel BAPE))
     Autenticación
       Login publico 
-      [POST] Validacion Credenciales
+      id_post["[POST] Validacion Credenciales"]
     Dashboard "Inicio"
       Gestión de Productos
         Lista inventario
