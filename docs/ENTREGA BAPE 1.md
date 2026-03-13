@@ -1,6 +1,11 @@
 # DOCUMENTO DE ENTREGA: PROYECTO BAPE
 
-Este documento detalla la arquitectura de software, la navegación del sistema y la pila tecnológica utilizada en el desarrollo y despliegue del proyecto BAPE (Bot Administrativo y de Planeación Empresarial).
+Este documento detalla la arquitectura de software, la navegación del sistema y la pila tecnológica utilizada en el desarrollo y despliegue del proyecto BAPE (Bot Administrativo y de Planeación Empresarial), dando cumplimiento a los requerimientos de la fase de desarrollo e integración de módulos.
+
+### 🔗 Repositorio y Control de Versiones (Git)
+El proyecto cuenta con control de versiones activo en GitHub. El historial de commits refleja la integración incremental y codificación de los módulos componentes.
+*   **Repositorio BAPE**: `https://github.com/IngenieroYlder/000-Backend-FastApi-BAPE1`
+*   **Rama principal**: `master`
 
 ---
 
@@ -33,10 +38,12 @@ El proyecto BAPE se construyó utilizando una arquitectura moderna orientada a m
 *   **Baileys**: Librería estrella de Node.js que simula el protocolo de WhatsApp Web, permitiendo conectar números mediante código QR sin utilizar la API oficial paga de Meta.
 *   **Express**: Framework ligero en Node.js que expone los endpoints internos para que FastAPI le envíe los mensajes generados por la Inteligencia Artificial.
 
-### 🚀 Despliegue e Infraestructura (DevOps)
-*   **Docker y Docker Compose**: Utilizados para empaquetar, aislar y orquestar los 3 contenedores del ecosistema (Base de Datos, Motor Node.js, API FastAPI).
-*   **VPS (Hostinger)**: Servidor Privado Virtual para alojar la aplicación garantizando control sobre el hardware 24/7.
-*   **Dokploy**: Plataforma como Servicio (PaaS) Open-Source instalada en el VPS. Se encarga de hacer Autodeploys cada vez que se envía o empuja nuevo código a la rama `master` en GitHub, compilando la nueva versión con Zero-Downtime.
+### 🚀 Configuración de Ambientes y DevOps
+Para la materialización técnica de la integración de módulos, el ambiente de producción fue configurado de la siguiente manera:
+*   **Servidor Host (Hardware)**: VPS (Virtual Private Server) proporcionado por Hostinger, ofreciendo ambiente Linux dedicado.
+*   **Gestor de Contenedores**: Docker y Docker Compose para asegurar paridad entre el entorno de desarrollo y producción.
+*   **Plataforma de Despliegue (PaaS)**: Dokploy. Configurado para reaccionar vía Webhook al repositorio de GitHub, ejecutando un Pipeline CI/CD que reconstruye la imagen y reinicia los contenedores automáticamente con Zero-Downtime.
+*   **Variables de Entorno (.env)**: La inyección de secretos (`POSTGRES_USER`, claves API de OpenAI/Groq, etc) se realiza de forma segura mediante los settings de Dokploy directo al contenedor, sin exponerlos en el código fuente.
 
 ---
 
@@ -156,6 +163,60 @@ flowchart TB
     Service_AI -->|POST Respuesta| WSC
 ```
 
+### 📊 Diagrama de Clases (ORM Database)
+El siguiente diagrama detalla la estructura principal orientada a objetos (Entidad-Relación lógica) programada mediante `SQLModel` en el módulo de persistencia de la aplicación. Muestra cómo la información se relaciona, partiendo del enrutamiento Multi-Tenant (Múltiples empresas).
+
+```mermaid
+classDiagram
+    direction TB
+    class Plan {
+        +Integer id
+        +String name
+        +Float price
+        +Boolean is_active
+    }
+    class Company {
+        +Integer id
+        +String name
+        +Boolean is_active
+        +Integer plan_id
+    }
+    class User {
+        +Integer id
+        +String email
+        +String password_hash
+        +String role
+        +Boolean is_active
+        +Integer company_id
+    }
+    class Contact {
+        +Integer id
+        +String phone
+        +String name
+        +Integer company_id
+    }
+    class Message {
+        +Integer id
+        +String text
+        +String sender_type
+        +DateTime created_at
+        +Integer contact_id
+    }
+    class Product {
+        +Integer id
+        +String name
+        +Float price
+        +Integer stock
+        +Integer company_id
+    }
+
+    Plan "1" <.. "*" Company : suscribed_to
+    Company "1" *-- "*" User : has_employees
+    Company "1" *-- "*" Contact : has_clients
+    Company "1" *-- "*" Product : catalog_items
+    Contact "1" *-- "*" Message : chat_history
+```
+
 ---
 
 ## 3. Mapa de Navegación del Sitio (Sitemap UI)
@@ -199,4 +260,14 @@ mindmap
 ```
 
 ---
-*Documento generado para la verificación técnica y de despliegue del proyecto BAPE.*
+
+## 4. Pruebas Unitarias y de Integración (Testing)
+Para evidenciar el correcto funcionamiento e integración de cada módulo desarrollado, se establecieron los siguientes protocolos de prueba:
+
+1. **Pruebas de API REST (Backend)**: Funcionalidad validada exhaustivamente mediante rutinas de pruebas manuales y unitarias sobre el panel de control autogenerado por FastAPI (**Swagger UI**). Se verificaron códigos de estado HTTP (200 OK, 401 Unauthorized, 404 Not Found) para registro de clientes, creación de productos y autenticación JWT.
+2. **Pruebas del Motor de IA**: Uso de scripts unitarios aislados (ej. `test_openai_direct.py`) para confirmar la resolución DNS y la integridad de la clave API hacia OpenAI antes de conectarlo al pipeline de la base de datos vectorial (pgvector).
+3. **Pruebas de Componente UI**: Verificación de carga DOM e inyección de datos provenientes de los Endpoints mediante funciones `fetchAPI` construidas en JavaScript en el Frontend.
+4. **Pruebas E2E (End-to-End) sobre WhatsApp**: Interacción en tiempo real escaneando el código QR generado por el microservicio `baileys_engine` y probando de forma integral enviando mensajes, confirmando respuestas automáticas del bot de IA, y validando la captura del lead en la tabla `contacts` de la base de datos PostgreSQL.
+
+---
+*Documento generado para la verificación técnica, código fuente y de despliegue del proyecto BAPE, en cumplimiento de la Evidencia Técnica.*
