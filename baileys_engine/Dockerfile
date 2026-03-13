@@ -1,4 +1,4 @@
-FROM node:18-slim
+FROM node:20-slim
 
 # Install necessary libraries for libsignal-node / canvas
 RUN apt-get update && apt-get install -y \
