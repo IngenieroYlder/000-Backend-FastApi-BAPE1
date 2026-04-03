@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -41,3 +41,11 @@ baileys_engine/sessions/
 baileys_engine/media/
 static/uploads/
 /=
+
+# Test automation artifacts
+.pytest_cache/
+pytest-cache-files-*/
+PRUEBAS/evidencias/
+PRUEBAS/__pycache__/
+PRUEBAS/tests/__pycache__/
+
