@@ -5,6 +5,7 @@ from app.models import Message, MessageRole, MessageType, Company, Contact, What
 import logging
 from datetime import datetime
 from app.services.qr_cache import qr_cache
+from app.services.ai_service import AIService
 from app.config import settings
 
 router = APIRouter()
