@@ -177,6 +177,9 @@
     <script>
         const token = localStorage.getItem('token');
         if (!token) window.location.href = '/login';
+        const whitelistDrafts = {};
+        let channelRefreshTimer = null;
+        let channelsLoading = false;
 
         function logout() { localStorage.removeItem('token'); window.location.href = '/login'; }
 
@@ -199,12 +202,43 @@
             }[char]));
         }
 
-        async function loadChannels() {
+        function isEditingWhitelist() {
+            return document.activeElement && document.activeElement.id && document.activeElement.id.startsWith('whitelist-');
+        }
+
+        function setWhitelistDraft(id, value) {
+            whitelistDrafts[id] = value;
+        }
+
+        function captureWhitelistDrafts() {
+            document.querySelectorAll('textarea[id^="whitelist-"]').forEach(textarea => {
+                const id = textarea.id.replace('whitelist-', '');
+                whitelistDrafts[id] = textarea.value;
+            });
+        }
+
+        function scheduleChannelRefresh(channels) {
+            if (channelRefreshTimer) clearTimeout(channelRefreshTimer);
+            if (channels.some(c => (c.status || '').toLowerCase() !== 'connected')) {
+                channelRefreshTimer = setTimeout(() => loadChannels(), 5000);
+            }
+        }
+
+        async function loadChannels(options = {}) {
+            if (channelsLoading) return;
+            if (!options.force && isEditingWhitelist()) {
+                scheduleChannelRefresh([{ status: 'qr_ready' }]);
+                return;
+            }
+
+            captureWhitelistDrafts();
+            channelsLoading = true;
             const res = await fetchAPI('/whatsapp/sessions');
             if (res.ok) {
                 const channels = await res.json();
                 renderChannels(channels);
             }
+            channelsLoading = false;
         }
 
         function renderChannels(channels) {
@@ -215,6 +249,7 @@
                 const card = document.createElement('div');
                 card.className = 'channel-card';
                 const whitelistNumbers = Array.isArray(c.bot_whitelist_numbers) ? c.bot_whitelist_numbers.join('\n') : '';
+                const whitelistValue = Object.prototype.hasOwnProperty.call(whitelistDrafts, c.id) ? whitelistDrafts[c.id] : whitelistNumbers;
                 
                 let statusClass = 'status-disconnected';
                 let statusText = c.status;
@@ -268,7 +303,7 @@
                                     <span class="slider"></span>
                                 </label>
                             </div>
-                            <textarea id="whitelist-${c.id}" class="form-control" rows="3" placeholder="573001234567&#10;+57 301 000 0000">${escapeHTML(whitelistNumbers)}</textarea>
+                            <textarea id="whitelist-${c.id}" class="form-control" rows="3" placeholder="573001234567&#10;+57 301 000 0000" oninput="setWhitelistDraft(${c.id}, this.value)">${escapeHTML(whitelistValue)}</textarea>
                             <button class="btn btn-outline" style="width:100%; margin-top:8px" onclick="saveWhitelist(${c.id})"><i class="fas fa-save"></i> Guardar whitelist</button>
                         </div>
                         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background:#f9f9f9; border-radius: 8px;">
@@ -322,9 +357,7 @@
                 }
             });
 
-            if (channels.some(c => (c.status || '').toLowerCase() !== 'connected')) {
-                setTimeout(loadChannels, 5000);
-            }
+            scheduleChannelRefresh(channels);
         }
 
         async function createChannel() {
@@ -350,15 +383,18 @@
 
         async function toggleWhitelist(id, enabled) {
             await fetchAPI(`/whatsapp/sessions/${id}/config`, 'PUT', { bot_whitelist_enabled: enabled });
-            loadChannels();
+            loadChannels({ force: true });
         }
 
         async function saveWhitelist(id) {
             const raw = document.getElementById(`whitelist-${id}`).value;
             const numbers = raw.split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
             const res = await fetchAPI(`/whatsapp/sessions/${id}/config`, 'PUT', { bot_whitelist_numbers: numbers });
-            if (res.ok) alert('Whitelist guardada');
-            loadChannels();
+            if (res.ok) {
+                delete whitelistDrafts[id];
+                alert('Whitelist guardada');
+            }
+            loadChannels({ force: true });
         }
 
         async function toggleStrategy(id, enabled) {
