@@ -126,7 +126,7 @@ async def create_session(
         "ai_provider": ai_provider,
         "ai_strategy": ai_strategy,
         "is_bot_enabled": True,
-        "bot_whitelist_enabled": True,
+        "bot_whitelist_enabled": False,
         "bot_whitelist_numbers": [],
         "respond_to_groups": False,
         "company_id": current_user.company_id,

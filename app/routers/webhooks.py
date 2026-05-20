@@ -44,7 +44,9 @@ def is_bot_allowed_for_contact(wa_session: WhatsAppSession, *identifiers: Option
         if normalize_whatsapp_identifier(item)
     }
     if not allowed:
-        return False
+        # Whitelist habilitada pero vacia: no tiene sentido bloquear todo,
+        # se trata como si la whitelist estuviera apagada.
+        return True
 
     return any(
         _whitelist_matches(normalize_whatsapp_identifier(identifier), allowed)

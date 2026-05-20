@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column(
         "whatsapp_sessions",
-        sa.Column("bot_whitelist_enabled", sa.Boolean(), nullable=False, server_default=sa.true()),
+        sa.Column("bot_whitelist_enabled", sa.Boolean(), nullable=False, server_default=sa.false()),
     )
     op.add_column(
         "whatsapp_sessions",

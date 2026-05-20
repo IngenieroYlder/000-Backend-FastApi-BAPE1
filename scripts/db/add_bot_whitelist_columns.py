@@ -4,8 +4,10 @@ from app.database import engine
 
 def add_columns():
     commands = [
-        "ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS bot_whitelist_enabled BOOLEAN DEFAULT TRUE",
+        "ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS bot_whitelist_enabled BOOLEAN DEFAULT FALSE",
         "ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS bot_whitelist_numbers JSONB DEFAULT '[]'::jsonb",
+        # Apaga la whitelist para canales existentes que ya tienen TRUE por la migracion vieja
+        "UPDATE whatsapp_sessions SET bot_whitelist_enabled = FALSE WHERE bot_whitelist_numbers IS NULL OR jsonb_array_length(COALESCE(bot_whitelist_numbers, '[]'::jsonb)) = 0",
     ]
 
     with Session(engine) as session:
