@@ -26,6 +26,25 @@ class AIService:
         self.groq_model = "llama-3.1-8b-instant"
         self.gemini_model = "gemini-1.5-flash-latest"
 
+    def get_configured_providers(self, company_settings=None):
+        providers = []
+        key_sources = [
+            ("openai", "openai_api_key"),
+            ("groq", "groq_api_key"),
+            ("gemini", "gemini_api_key"),
+        ]
+
+        for provider, attr in key_sources:
+            key = getattr(company_settings, attr, None) if company_settings else None
+            if not key:
+                key = getattr(self, attr, None)
+            if isinstance(key, str):
+                key = key.strip()
+            if key:
+                providers.append((provider, key))
+
+        return providers
+
     async def generate_response(
         self, 
         prompt: str, 

@@ -8,6 +8,15 @@ __pycache__/
 venv/
 env/
 .env
+.env.*
+
+# Secrets / credentials
+*.pem
+*.key
+*.p12
+*.crt
+*.sqlite
+*.db
 
 # Distribution / Packaging
 build/
@@ -48,4 +57,9 @@ pytest-cache-files-*/
 PRUEBAS/evidencias/
 PRUEBAS/__pycache__/
 PRUEBAS/tests/__pycache__/
+
+# Local generated documents
+*.docx
+*.pdf
+generar_actas_bape.py
 

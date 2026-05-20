@@ -4,12 +4,52 @@ from sqlmodel import Session, select
 from app.models import Message, MessageRole, MessageType, Company, Contact, WhatsAppSession, CompanySettings
 import logging
 from datetime import datetime
+from typing import Optional, Set
 from app.services.qr_cache import qr_cache
 from app.services.ai_service import AIService
 from app.config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+def normalize_whatsapp_identifier(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    raw = str(value).strip().lower().split("@")[0]
+    digits = "".join(ch for ch in raw if ch.isdigit())
+    return digits or raw
+
+def _whitelist_matches(candidate: str, allowed: Set[str]) -> bool:
+    if not candidate:
+        return False
+    if candidate in allowed:
+        return True
+    for allowed_item in allowed:
+        if len(candidate) >= 7 and len(allowed_item) >= 7:
+            if candidate.endswith(allowed_item) or allowed_item.endswith(candidate):
+                return True
+    return False
+
+def is_bot_allowed_for_contact(wa_session: WhatsAppSession, *identifiers: Optional[str]) -> bool:
+    if not wa_session.bot_whitelist_enabled:
+        return True
+
+    raw_whitelist = wa_session.bot_whitelist_numbers or []
+    if isinstance(raw_whitelist, str):
+        raw_whitelist = raw_whitelist.replace(";", "\n").replace(",", "\n").splitlines()
+
+    allowed = {
+        normalize_whatsapp_identifier(item)
+        for item in raw_whitelist
+        if normalize_whatsapp_identifier(item)
+    }
+    if not allowed:
+        return False
+
+    return any(
+        _whitelist_matches(normalize_whatsapp_identifier(identifier), allowed)
+        for identifier in identifiers
+    )
 
 @router.post("/webhook")
 async def handle_webhook(request: Request, background_tasks: BackgroundTasks, session: Session = Depends(get_session)):
@@ -155,12 +195,7 @@ async def process_incoming_message(session_name: str, msg_data: dict, session: S
         
         # Select best provider based on active config (mock logic for now)
         preferred_provider = wa_session.ai_provider or "openai" # Use session's preferred provider
-        available_providers = []
-        # Use c_settings (company settings) for API keys
-        if c_settings:
-            if c_settings.openai_api_key: available_providers.append(("openai", c_settings.openai_api_key))
-            if c_settings.groq_api_key: available_providers.append(("groq", c_settings.groq_api_key))
-            if c_settings.gemini_api_key: available_providers.append(("gemini", c_settings.gemini_api_key))
+        available_providers = ai_service.get_configured_providers(c_settings)
         
         if preferred_provider:
             available_providers.sort(key=lambda x: 0 if x[0] == preferred_provider else 1)
@@ -249,7 +284,14 @@ async def process_incoming_message(session_name: str, msg_data: dict, session: S
         session.commit()
         
         valid_types = [MessageType.TEXT, MessageType.AUDIO, MessageType.IMAGE]
-        if msg_type in valid_types and wa_session.is_bot_enabled and not contact.is_paused and not contact.is_excluded and text_content:
+        allowed_by_whitelist = is_bot_allowed_for_contact(
+            wa_session,
+            phone,
+            sender_lid,
+            remote_jid,
+            contact.phone if contact else None,
+        )
+        if msg_type in valid_types and wa_session.is_bot_enabled and not contact.is_paused and not contact.is_excluded and allowed_by_whitelist and text_content:
             from app.services.buffer_service import buffer_service
             buffer_data = {
                 "company_id": company_id,
@@ -259,6 +301,12 @@ async def process_incoming_message(session_name: str, msg_data: dict, session: S
                 "remote_jid": remote_jid
             }
             await buffer_service.add_message(session_name, remote_jid, text_content, buffer_data, message_key=msg_data.get("key"))
+        elif wa_session.bot_whitelist_enabled and not allowed_by_whitelist:
+            logger.info(
+                "Bot skipped for non-whitelisted contact %s in session %s",
+                contact.phone if contact else phone,
+                wa_session.session_name,
+            )
 
     except Exception as e:
         logger.error(f"Error processing message: {e}")

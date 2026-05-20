@@ -217,11 +217,7 @@ class BufferService:
                 preferred_provider = wa_session.ai_provider or "openai"
                 
                 # 1. Build list of ALL configured providers
-                all_providers = []
-                if company_settings:
-                    if company_settings.openai_api_key: all_providers.append(("openai", company_settings.openai_api_key))
-                    if company_settings.groq_api_key: all_providers.append(("groq", company_settings.groq_api_key))
-                    if company_settings.gemini_api_key: all_providers.append(("gemini", company_settings.gemini_api_key))
+                all_providers = ai_service.get_configured_providers(company_settings)
 
                 # 2. Filter by health (skip known limits/errors)
                 available_providers = [p for p in all_providers if self._is_provider_healthy(company_id, p[0])]

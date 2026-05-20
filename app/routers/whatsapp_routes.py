@@ -36,6 +36,8 @@ async def get_sessions(db: Session = Depends(get_session), current_user: models.
                     "ai_provider": s.ai_provider,
                     "ai_strategy": s.ai_strategy,
                     "is_bot_enabled": s.is_bot_enabled,
+                    "bot_whitelist_enabled": s.bot_whitelist_enabled,
+                    "bot_whitelist_numbers": s.bot_whitelist_numbers,
                     "respond_to_groups": s.respond_to_groups,
                     "company_id": s.company_id,
                     "status": s.status
@@ -124,6 +126,8 @@ async def create_session(
         "ai_provider": ai_provider,
         "ai_strategy": ai_strategy,
         "is_bot_enabled": True,
+        "bot_whitelist_enabled": True,
+        "bot_whitelist_numbers": [],
         "respond_to_groups": False,
         "company_id": current_user.company_id,
         "status": "disconnected"
@@ -374,13 +378,31 @@ async def update_session_config(
     session_id: int,
     respond_to_groups: Optional[bool] = None,
     is_bot_enabled: Optional[bool] = None,
+    bot_whitelist_enabled: Optional[bool] = None,
     ai_provider: Optional[str] = None,
     ai_strategy: Optional[str] = None,
+    payload: Optional[dict] = Body(default=None),
     db: Session = Depends(get_session),
     current_user: models.User = Depends(auth.get_current_user)
 ):
     """Update session bot configuration"""
     session_dict = None
+    payload = payload or {}
+    if "respond_to_groups" in payload:
+        respond_to_groups = payload.get("respond_to_groups")
+    if "is_bot_enabled" in payload:
+        is_bot_enabled = payload.get("is_bot_enabled")
+    if "bot_whitelist_enabled" in payload:
+        bot_whitelist_enabled = payload.get("bot_whitelist_enabled")
+    bot_whitelist_numbers = payload.get("bot_whitelist_numbers")
+    if bot_whitelist_numbers is not None:
+        if not isinstance(bot_whitelist_numbers, list):
+            raise HTTPException(status_code=422, detail="bot_whitelist_numbers debe ser una lista")
+        bot_whitelist_numbers = [str(item).strip() for item in bot_whitelist_numbers if str(item).strip()]
+    if "ai_provider" in payload:
+        ai_provider = payload.get("ai_provider")
+    if "ai_strategy" in payload:
+        ai_strategy = payload.get("ai_strategy")
     
     def _update_sync():
         session = db.get(models.WhatsAppSession, session_id)
@@ -391,6 +413,10 @@ async def update_session_config(
             session.respond_to_groups = respond_to_groups
         if is_bot_enabled is not None:
             session.is_bot_enabled = is_bot_enabled
+        if bot_whitelist_enabled is not None:
+            session.bot_whitelist_enabled = bot_whitelist_enabled
+        if bot_whitelist_numbers is not None:
+            session.bot_whitelist_numbers = bot_whitelist_numbers
         if ai_provider is not None:
             session.ai_provider = ai_provider
         if ai_strategy is not None:
@@ -409,6 +435,8 @@ async def update_session_config(
              updates = {}
              if respond_to_groups is not None: updates["respond_to_groups"] = respond_to_groups
              if is_bot_enabled is not None: updates["is_bot_enabled"] = is_bot_enabled
+             if bot_whitelist_enabled is not None: updates["bot_whitelist_enabled"] = bot_whitelist_enabled
+             if bot_whitelist_numbers is not None: updates["bot_whitelist_numbers"] = bot_whitelist_numbers
              if ai_provider is not None: updates["ai_provider"] = ai_provider
              if ai_strategy is not None: updates["ai_strategy"] = ai_strategy
              

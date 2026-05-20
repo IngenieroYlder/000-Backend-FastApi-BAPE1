@@ -19,6 +19,8 @@ def apply_crm_schema():
     commands = [
         # WhatsAppSession
         "ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS respond_to_groups BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS bot_whitelist_enabled BOOLEAN DEFAULT TRUE",
+        "ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS bot_whitelist_numbers JSONB DEFAULT '[]'::jsonb",
         
         # Contact
         "ALTER TABLE contacts ADD COLUMN IF NOT EXISTS is_excluded BOOLEAN DEFAULT FALSE",

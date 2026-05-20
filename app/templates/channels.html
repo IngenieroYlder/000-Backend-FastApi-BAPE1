@@ -189,6 +189,16 @@
             return res;
         }
 
+        function escapeHTML(value) {
+            return String(value || '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+
         async function loadChannels() {
             const res = await fetchAPI('/whatsapp/sessions');
             if (res.ok) {
@@ -204,6 +214,7 @@
             channels.forEach(c => {
                 const card = document.createElement('div');
                 card.className = 'channel-card';
+                const whitelistNumbers = Array.isArray(c.bot_whitelist_numbers) ? c.bot_whitelist_numbers.join('\n') : '';
                 
                 let statusClass = 'status-disconnected';
                 let statusText = c.status;
@@ -248,6 +259,17 @@
                                 <input type="checkbox" ${c.is_bot_enabled ? 'checked' : ''} onchange="toggleBot(${c.id}, this.checked)">
                                 <span class="slider"></span>
                             </label>
+                        </div>
+                        <div style="margin-bottom: 10px; padding: 10px; background:#f9f9f9; border-radius: 8px;">
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size:13px">Modo pruebas (whitelist)</span>
+                                <label class="switch">
+                                    <input type="checkbox" ${c.bot_whitelist_enabled ? 'checked' : ''} onchange="toggleWhitelist(${c.id}, this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <textarea id="whitelist-${c.id}" class="form-control" rows="3" placeholder="573001234567&#10;+57 301 000 0000">${escapeHTML(whitelistNumbers)}</textarea>
+                            <button class="btn btn-outline" style="width:100%; margin-top:8px" onclick="saveWhitelist(${c.id})"><i class="fas fa-save"></i> Guardar whitelist</button>
                         </div>
                         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background:#f9f9f9; border-radius: 8px;">
                             <span style="font-size:13px" title="Si falla un API (ej. sin saldo), intenta con otro">Rotación de APIs 🔄</span>
@@ -324,6 +346,19 @@
 
         async function toggleBot(id, enabled) {
             await fetchAPI(`/whatsapp/sessions/${id}/config?is_bot_enabled=${enabled}`, 'PUT');
+        }
+
+        async function toggleWhitelist(id, enabled) {
+            await fetchAPI(`/whatsapp/sessions/${id}/config`, 'PUT', { bot_whitelist_enabled: enabled });
+            loadChannels();
+        }
+
+        async function saveWhitelist(id) {
+            const raw = document.getElementById(`whitelist-${id}`).value;
+            const numbers = raw.split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
+            const res = await fetchAPI(`/whatsapp/sessions/${id}/config`, 'PUT', { bot_whitelist_numbers: numbers });
+            if (res.ok) alert('Whitelist guardada');
+            loadChannels();
         }
 
         async function toggleStrategy(id, enabled) {

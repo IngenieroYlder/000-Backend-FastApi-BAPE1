@@ -352,6 +352,8 @@ class WhatsAppSession(SQLModel, table=True):
     # Bot Control
     respond_to_groups: bool = Field(default=False)
     is_bot_enabled: bool = Field(default=True)
+    bot_whitelist_enabled: bool = Field(default=True)
+    bot_whitelist_numbers: List[str] = Field(default=[], sa_column=Column(JSON))
     
     company: Company = Relationship(back_populates="whatsapp_sessions")
     messages: List[Message] = Relationship(back_populates="session")
