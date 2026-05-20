@@ -46,4 +46,4 @@ class Settings:
 settings = Settings()
 settings.LOG_DIR.mkdir(parents=True, exist_ok=True)
 settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
-BAILEYS_ENGINE_URL = "http://127.0.0.1:3005"
+BAILEYS_ENGINE_URL = os.getenv("BAILEYS_ENGINE_URL") or os.getenv("BAILEYS_URL") or "http://127.0.0.1:3005"
