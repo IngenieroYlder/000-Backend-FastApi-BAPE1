@@ -40,16 +40,28 @@ const deleteFolderRecursive = (directoryPath) => {
 
 async function startSession(sessionName, webhookUrl) {
     const sessionPath = path.join(SESSION_DIR, sessionName);
-    
+
     // Create session dir if not exists (handled by useMultiFileAuthState but good to know)
     if (!fs.existsSync(sessionPath)) {
         fs.mkdirSync(sessionPath, { recursive: true });
     }
 
+    // Persist or restore webhook URL so a Baileys restart does not silently
+    // disable webhooks for sessions that were paired before the redeploy.
+    const webhookFile = path.join(sessionPath, 'webhook_url.txt');
+    if (webhookUrl) {
+        try { fs.writeFileSync(webhookFile, webhookUrl); } catch (e) { console.error('Error writing webhook_url.txt:', e.message); }
+    } else if (fs.existsSync(webhookFile)) {
+        try {
+            webhookUrl = fs.readFileSync(webhookFile, 'utf8').trim();
+            console.log(`[${sessionName}] Restored webhook_url from disk: ${webhookUrl}`);
+        } catch (e) { console.error('Error reading webhook_url.txt:', e.message); }
+    }
+
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    
-    console.log(`Starting session ${sessionName} with version ${version.join('.')}`);
+
+    console.log(`Starting session ${sessionName} with version ${version.join('.')} (webhook=${webhookUrl || 'NONE'})`);
 
     const sock = makeWASocket({
         version,
@@ -312,7 +324,34 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', active_sessions: sessions.size });
 });
 
+// Auto-restore: on boot, scan SESSION_DIR for previously paired sessions and
+// reconnect them using the webhook_url persisted alongside the credentials.
+// This means a redeploy of the Baileys engine no longer needs the backend to
+// reach out — sessions come back online by themselves.
+async function autoRestoreSessions() {
+    try {
+        if (!fs.existsSync(SESSION_DIR)) return;
+        const entries = fs.readdirSync(SESSION_DIR, { withFileTypes: true });
+        for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+            const sessionName = entry.name;
+            const sessionPath = path.join(SESSION_DIR, sessionName);
+            const credsFile = path.join(sessionPath, 'creds.json');
+            if (!fs.existsSync(credsFile)) continue; // never paired, skip
+            console.log(`[Baileys] Auto-restoring session: ${sessionName}`);
+            try {
+                await startSession(sessionName);
+            } catch (e) {
+                console.error(`[Baileys] Auto-restore failed for ${sessionName}:`, e.message);
+            }
+        }
+    } catch (e) {
+        console.error('[Baileys] Auto-restore scan failed:', e.message);
+    }
+}
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Baileys Engine running on port ${PORT}`);
+    autoRestoreSessions();
 });
