@@ -71,19 +71,26 @@ async function startSession(sessionName, webhookUrl) {
         browser: ['BAPE', 'Chrome', '1.0.0']
     });
 
+    // sessionEntry is the SAME object placed in the sessions Map below.
+    // Closures below reference sessionEntry.webhookUrl, so /session/init
+    // mutating that field on an active session takes effect immediately
+    // instead of requiring a restart of the socket.
+    const sessionEntry = { sock, webhookUrl };
+
     // Save creds
     sock.ev.on('creds.update', saveCreds);
 
     // Connection updates
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
+        const currentWebhook = sessionEntry.webhookUrl;
 
         if (qr) {
             console.log(`QR Generated for ${sessionName}`);
             // Send QR to webhook
-            if (webhookUrl) {
+            if (currentWebhook) {
                 try {
-                    await axios.post(webhookUrl, { event: 'qr', session_name: sessionName, qr });
+                    await axios.post(currentWebhook, { event: 'qr', session_name: sessionName, qr });
                 } catch (err) {
                     console.error('Error sending QR webhook:', err.message);
                 }
@@ -93,9 +100,9 @@ async function startSession(sessionName, webhookUrl) {
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log(`Connection closed for ${sessionName}. Reconnecting: ${shouldReconnect}`);
-            
+
             if (shouldReconnect) {
-                startSession(sessionName, webhookUrl);
+                startSession(sessionName, sessionEntry.webhookUrl);
             } else {
                 console.log(`Session ${sessionName} logged out.`);
                 sessions.delete(sessionName);
@@ -103,9 +110,9 @@ async function startSession(sessionName, webhookUrl) {
             }
         } else if (connection === 'open') {
             console.log(`Session ${sessionName} opened.`);
-             if (webhookUrl) {
+             if (currentWebhook) {
                 try {
-                    await axios.post(webhookUrl, { event: 'ready', session_name: sessionName });
+                    await axios.post(currentWebhook, { event: 'ready', session_name: sessionName });
                 } catch (err) {
                    console.error('Error sending ready webhook:', err.message);
                 }
@@ -121,7 +128,8 @@ async function startSession(sessionName, webhookUrl) {
         }
         if (type === 'notify') {
             for (const msg of messages) {
-                if (!msg.key.fromMe && webhookUrl) {
+                const currentWebhook = sessionEntry.webhookUrl;
+                if (!msg.key.fromMe && currentWebhook) {
                     try {
                         const messageType = msg.message ? Object.keys(msg.message)[0] : 'unknown';
 
@@ -153,14 +161,14 @@ async function startSession(sessionName, webhookUrl) {
                         }
 
                         // Send Webhook with media_path
-                        const payload = { 
-                            event: 'message', 
-                            session_name: sessionName, 
+                        const payload = {
+                            event: 'message',
+                            session_name: sessionName,
                             message: msg,
-                            media_path: mediaPath 
+                            media_path: mediaPath
                         };
 
-                        await axios.post(webhookUrl, payload);
+                        await axios.post(currentWebhook, payload);
                     } catch (err) {
                         console.error('Error handling message/media:', err.message);
                     }
@@ -169,7 +177,7 @@ async function startSession(sessionName, webhookUrl) {
         }
     });
 
-    sessions.set(sessionName, { sock, webhookUrl });
+    sessions.set(sessionName, sessionEntry);
     return sock;
 }
 
@@ -255,8 +263,22 @@ app.post('/session/init', async (req, res) => {
     const { session_name, webhook_url } = req.body;
     if (!session_name) return res.status(400).json({ error: 'session_name is required' });
 
-    if (sessions.has(session_name)) {
-        return res.json({ message: 'Session already active', status: 'active' });
+    const existing = sessions.get(session_name);
+    if (existing) {
+        // Session is already running (e.g. auto-restored). If the caller
+        // provided a webhook_url, refresh it both in memory and on disk so
+        // events start flowing again instead of being silently dropped.
+        if (webhook_url) {
+            existing.webhookUrl = webhook_url;
+            try {
+                const webhookFile = path.join(SESSION_DIR, session_name, 'webhook_url.txt');
+                fs.writeFileSync(webhookFile, webhook_url);
+                console.log(`[${session_name}] webhook_url refreshed for active session: ${webhook_url}`);
+            } catch (e) {
+                console.error('Error refreshing webhook_url.txt:', e.message);
+            }
+        }
+        return res.json({ message: 'Session already active', status: 'active', webhook_updated: !!webhook_url });
     }
 
     try {
