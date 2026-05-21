@@ -257,10 +257,11 @@ async def process_incoming_message(session_name: str, msg_data: dict, session: S
         
         if not contact:
             contact = Contact(
-                company_id=company_id, 
-                phone=sender_lid if sender_lid else phone, 
+                company_id=company_id,
+                phone=sender_lid if sender_lid else phone,
                 name=push_name,
-                platform=Platform.WHATSAPP
+                platform=Platform.WHATSAPP,
+                is_group=is_group,
             )
             session.add(contact)
             session.commit()
@@ -269,6 +270,8 @@ async def process_incoming_message(session_name: str, msg_data: dict, session: S
             contact.last_chat_date = datetime.utcnow()
             if contact.name == contact.phone and push_name != phone:
                 contact.name = push_name
+            if is_group and not contact.is_group:
+                contact.is_group = True
             session.add(contact)
             session.commit()
         

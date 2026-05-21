@@ -289,7 +289,8 @@ class Contact(SQLModel, table=True):
     platform: Platform = Field(default=Platform.WHATSAPP)
     is_paused: bool = Field(default=False)
     paused_until: Optional[datetime] = None
-    
+    is_group: bool = Field(default=False)
+
     # CRM & Bot Control
     is_excluded: bool = Field(default=False)
     tags: List[str] = Field(default=[], sa_column=Column(JSON))

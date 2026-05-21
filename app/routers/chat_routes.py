@@ -80,8 +80,17 @@ async def send_message(
         raise HTTPException(status_code=400, detail=detail)
 
     session_name = wa_session.session_name
-    jid = f"{contact.phone}@s.whatsapp.net"
-    
+    # Group JIDs end with @g.us, individual chats with @s.whatsapp.net.
+    # Fallback for legacy contacts saved before is_group existed: long numeric
+    # phones (>=15 digits) or the modern community/group prefix.
+    looks_like_group = (
+        getattr(contact, "is_group", False)
+        or len(contact.phone) >= 15
+        or contact.phone.startswith("120363")
+    )
+    jid = f"{contact.phone}@g.us" if looks_like_group else f"{contact.phone}@s.whatsapp.net"
+    logger.info(f"[chat.send] session={session_name} jid={jid} (group={looks_like_group})")
+
     try:
         async with httpx.AsyncClient() as client:
             baileys_payload = {
@@ -90,12 +99,13 @@ async def send_message(
                 "message": {"text": content}
             }
             resp = await client.post(f"{BAILEYS_ENGINE_URL}/message/send", json=baileys_payload)
-            
+
             if resp.status_code != 200:
-                logger.error(f"Baileys Send Error: {resp.text}")
-                # Optional: Mark message as failed in DB
-                raise HTTPException(status_code=500, detail="Failed to send message via WhatsApp")
-                
+                logger.error(f"Baileys Send Error ({resp.status_code}): {resp.text}")
+                raise HTTPException(status_code=500, detail=f"Baileys rejected the message: {resp.text}")
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error sending message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
