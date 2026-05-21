@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 from app.database import engine
 from sqlmodel import Session, select
 from datetime import datetime, timedelta
-from app.models import CompanySettings, Message, MessageRole, MessageType, WhatsAppSession, Contact, Service
+from app.models import CompanySettings, Message, MessageRole, MessageType, WhatsAppSession, Contact, Service, Product
 from app.services.ai_service import ai_service
 from app.config import BAILEYS_ENGINE_URL
 import httpx
@@ -189,12 +189,63 @@ class BufferService:
                 if company_settings and company_settings.golden_rules:
                     base_instruction += f"\n\n### REGLAS DE ORO:\n{company_settings.golden_rules}"
                 
-                # FETCH SERVICES
-                stmt_services = select(Service).where(Service.company_id == company_id)
-                services = session.exec(stmt_services).all()
+                # FETCH SERVICES & PRODUCTS — feed the catalog into the prompt so
+                # the model recommends only real items (anti-hallucination).
+                # Descriptions are truncated to keep the prompt bounded; for very
+                # large catalogs (>50 items per category) consider switching to
+                # RAG over the catalog instead of inlining everything.
+                def _fmt_price(p):
+                    if p is None:
+                        return ""
+                    try:
+                        return f" — ${float(p):,.0f}"
+                    except Exception:
+                        return ""
+
+                def _trim(text, limit=200):
+                    if not text:
+                        return ""
+                    text = text.strip().replace("\n", " ")
+                    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+                services = session.exec(
+                    select(Service).where(Service.company_id == company_id)
+                ).all()
+                products = session.exec(
+                    select(Product).where(Product.company_id == company_id)
+                ).all()
+
+                catalog_block = ""
                 if services:
-                    services_list = "\n".join([f"- {s.name}: {s.description or ''}" for s in services])
-                    base_instruction += f"\n\n### TIPOS DE CITA / SERVICIOS DISPONIBLES:\n{services_list}\n(Ofrece estas opciones al usuario para su cita)"
+                    services_list = "\n".join(
+                        f"- {s.name}{_fmt_price(s.price)}: {_trim(s.description)}"
+                        for s in services
+                    )
+                    catalog_block += (
+                        "\n\n### SERVICIOS DISPONIBLES "
+                        "(usados también como tipos de cita):\n"
+                        f"{services_list}"
+                    )
+                if products:
+                    products_list = "\n".join(
+                        f"- {p.name}{_fmt_price(p.price)} "
+                        f"(stock: {p.stock}): {_trim(p.description)}"
+                        for p in products
+                    )
+                    catalog_block += (
+                        "\n\n### PRODUCTOS DISPONIBLES:\n"
+                        f"{products_list}"
+                    )
+                if catalog_block:
+                    base_instruction += catalog_block
+                    base_instruction += (
+                        "\n\n### REGLAS ESTRICTAS DEL CATÁLOGO:"
+                        "\n- SOLO puedes recomendar productos y servicios listados arriba."
+                        "\n- NUNCA inventes precios, stock, características ni servicios que no estén listados."
+                        "\n- Si el usuario pregunta por algo que no aparece en el catálogo, "
+                        "responde con honestidad que no lo manejas y ofrece alternativas REALES de la lista."
+                        "\n- Cita los precios y el stock exactamente como están listados."
+                    )
                 
                 # INJECT KNOWLEDGE BASE (RAG)
                 from app.services.rag_service import rag_service

@@ -12,6 +12,7 @@ jinja2
 python-multipart
 email-validator
 pdfplumber
+Pillow
 numpy
 fastembed
 google-api-python-client

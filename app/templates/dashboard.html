@@ -283,17 +283,20 @@
                             <select id="prodCategory" required>
                                 <option value="">Selecciona Categoría...</option>
                             </select>
-                            <input type="text" id="prodImage" placeholder="URL Imagen Principal">
+                            <input type="file" id="prodImageFile" accept="image/*">
                         </div>
                         <div class="form-row">
                             <input type="text" id="prodShortDesc" placeholder="Descripción Corta">
                         </div>
                         <label>Descripción Larga (WYSIWYG):</label>
                         <div id="prodLongDescEditor"></div>
-                        <label style="display:block; margin-top: 15px; margin-bottom: 5px;">Galería (URLs separadas
-                            por
-                            coma):</label>
-                        <textarea id="prodGallery" rows="3" placeholder="http://img1.jpg, http://img2.jpg"></textarea>
+                        <label style="display:block; margin-top: 15px; margin-bottom: 5px;">
+                            Galería (puedes seleccionar varias imágenes):
+                        </label>
+                        <input type="file" id="prodGalleryFiles" accept="image/*" multiple>
+                        <small style="display:block; color:#777; margin-top:4px;">
+                            Las imágenes se comprimen automáticamente a WebP (máx. 1200 px, ~80 % calidad).
+                        </small>
                         <div style="text-align: right; margin-top: 15px;">
                             <button type="submit" class="btn btn-primary">Crear Producto</button>
                         </div>
@@ -304,11 +307,12 @@
                         <thead>
                             <tr>
                                 <th style="width: 50px;">ID</th>
+                                <th style="width: 60px;">Img</th>
                                 <th>Nombre</th>
                                 <th>Categoría</th>
                                 <th style="width: 100px;">Precio</th>
                                 <th style="width: 80px;">Stock</th>
-                                <th style="width: 100px;">Acciones</th>
+                                <th style="width: 180px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="productsTable"></tbody>
@@ -330,17 +334,20 @@
                             <select id="servCategory" required>
                                 <option value="">Selecciona Categoría...</option>
                             </select>
-                            <input type="text" id="servImage" placeholder="URL Imagen Principal">
+                            <input type="file" id="servImageFile" accept="image/*">
                         </div>
                         <div class="form-row">
                             <input type="text" id="servShortDesc" placeholder="Descripción Corta">
                         </div>
                         <label>Descripción Larga (WYSIWYG):</label>
                         <div id="servLongDescEditor"></div>
-                        <label style="display:block; margin-top: 15px; margin-bottom: 5px;">Galería (URLs separadas
-                            por
-                            coma):</label>
-                        <textarea id="servGallery" rows="3" placeholder="http://img1.jpg, http://img2.jpg"></textarea>
+                        <label style="display:block; margin-top: 15px; margin-bottom: 5px;">
+                            Galería (puedes seleccionar varias imágenes):
+                        </label>
+                        <input type="file" id="servGalleryFiles" accept="image/*" multiple>
+                        <small style="display:block; color:#777; margin-top:4px;">
+                            Las imágenes se comprimen automáticamente a WebP (máx. 1200 px, ~80 % calidad).
+                        </small>
                         <div style="text-align: right; margin-top: 15px;">
                             <button type="submit" class="btn btn-primary">Crear Servicio</button>
                         </div>
@@ -351,10 +358,11 @@
                         <thead>
                             <tr>
                                 <th style="width: 50px;">ID</th>
+                                <th style="width: 60px;">Img</th>
                                 <th>Nombre</th>
                                 <th>Categoría</th>
                                 <th style="width: 100px;">Precio</th>
-                                <th style="width: 100px;">Acciones</th>
+                                <th style="width: 180px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="servicesTable"></tbody>
@@ -544,9 +552,19 @@
         }
 
         async function fetchAPI(url, method = 'GET', body = null) {
-            const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+            const headers = { 'Authorization': `Bearer ${token}` };
+            let payload = null;
+            if (body) {
+                if (body instanceof FormData) {
+                    // Let the browser set Content-Type with the multipart boundary.
+                    payload = body;
+                } else {
+                    headers['Content-Type'] = 'application/json';
+                    payload = JSON.stringify(body);
+                }
+            }
             const options = { method, headers };
-            if (body) options.body = JSON.stringify(body);
+            if (payload !== null) options.body = payload;
             const response = await fetch(url, options);
             if (response.status === 401) logout();
             return response;
@@ -618,6 +636,17 @@
         }
 
         // --- PRODUCTOS ---
+        function _thumbHtml(url) {
+            if (!url) return '<span style="color:#aaa;">sin imagen</span>';
+            return `<img src="${url}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;">`;
+        }
+
+        async function _uploadImageFile(endpoint, file) {
+            const fd = new FormData();
+            fd.append('file', file);
+            return fetchAPI(endpoint, 'POST', fd);
+        }
+
         async function loadProducts() {
             const res = await fetchAPI('/products/');
             if (res.ok) {
@@ -626,11 +655,17 @@
                 tbody.innerHTML = products.map(p => `
                     <tr>
                         <td>${p.id}</td>
+                        <td>${_thumbHtml(p.image)}</td>
                         <td title="${p.name}">${p.name}</td>
-                        <td>${p.category_id || '-'}</td> 
+                        <td>${p.category_id || '-'}</td>
                         <td>$${p.price}</td>
                         <td>${p.stock}</td>
                         <td>
+                            <label class="btn btn-secondary" style="cursor:pointer;">
+                                Imagen
+                                <input type="file" accept="image/*" style="display:none;"
+                                    onchange="uploadProductImage(${p.id}, this.files[0], this)">
+                            </label>
                             <button class="btn btn-danger" onclick="deleteProduct(${p.id})">Eliminar</button>
                         </td>
                     </tr>
@@ -638,28 +673,50 @@
             }
         }
 
+        async function uploadProductImage(productId, file, inputEl) {
+            if (!file) return;
+            const res = await _uploadImageFile(`/products/${productId}/upload-image`, file);
+            if (inputEl) inputEl.value = '';
+            if (res.ok) {
+                loadProducts();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert('Error al subir imagen: ' + (data.detail || res.status));
+            }
+        }
+
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const mainFile = document.getElementById('prodImageFile').files[0];
+            const galleryFiles = Array.from(document.getElementById('prodGalleryFiles').files);
+
             const data = {
                 name: document.getElementById('prodName').value,
                 price: parseFloat(document.getElementById('prodPrice').value),
                 stock: parseInt(document.getElementById('prodStock').value),
                 category_id: parseInt(document.getElementById('prodCategory').value),
-                image: document.getElementById('prodImage').value,
                 short_description: document.getElementById('prodShortDesc').value,
                 long_description: prodQuill.root.innerHTML,
-                gallery_images: parseGallery(document.getElementById('prodGallery').value)
             };
             data.description = data.short_description;
 
             const res = await fetchAPI('/products/', 'POST', data);
-            if (res.ok) {
-                e.target.reset();
-                prodQuill.setContents([]);
-                loadProducts();
-            } else {
+            if (!res.ok) {
                 alert('Error al crear producto');
+                return;
             }
+            const created = await res.json();
+
+            if (mainFile) {
+                await _uploadImageFile(`/products/${created.id}/upload-image`, mainFile);
+            }
+            for (const f of galleryFiles) {
+                await _uploadImageFile(`/products/${created.id}/upload-gallery`, f);
+            }
+
+            e.target.reset();
+            prodQuill.setContents([]);
+            loadProducts();
         });
 
         async function deleteProduct(id) {
@@ -677,10 +734,16 @@
                 tbody.innerHTML = services.map(s => `
                     <tr>
                         <td>${s.id}</td>
+                        <td>${_thumbHtml(s.image)}</td>
                         <td title="${s.name}">${s.name}</td>
                         <td>${s.category_id || '-'}</td>
                         <td>$${s.price}</td>
                         <td>
+                            <label class="btn btn-secondary" style="cursor:pointer;">
+                                Imagen
+                                <input type="file" accept="image/*" style="display:none;"
+                                    onchange="uploadServiceImage(${s.id}, this.files[0], this)">
+                            </label>
                             <button class="btn btn-danger" onclick="deleteService(${s.id})">Eliminar</button>
                         </td>
                     </tr>
@@ -688,27 +751,49 @@
             }
         }
 
+        async function uploadServiceImage(serviceId, file, inputEl) {
+            if (!file) return;
+            const res = await _uploadImageFile(`/services/${serviceId}/upload-image`, file);
+            if (inputEl) inputEl.value = '';
+            if (res.ok) {
+                loadServices();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert('Error al subir imagen: ' + (data.detail || res.status));
+            }
+        }
+
         document.getElementById('serviceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const mainFile = document.getElementById('servImageFile').files[0];
+            const galleryFiles = Array.from(document.getElementById('servGalleryFiles').files);
+
             const data = {
                 name: document.getElementById('servName').value,
                 price: parseFloat(document.getElementById('servPrice').value),
                 category_id: parseInt(document.getElementById('servCategory').value),
-                image: document.getElementById('servImage').value,
                 short_description: document.getElementById('servShortDesc').value,
                 long_description: servQuill.root.innerHTML,
-                gallery_images: parseGallery(document.getElementById('servGallery').value)
             };
             data.description = data.short_description;
 
             const res = await fetchAPI('/services/', 'POST', data);
-            if (res.ok) {
-                e.target.reset();
-                servQuill.setContents([]);
-                loadServices();
-            } else {
+            if (!res.ok) {
                 alert('Error al crear servicio');
+                return;
             }
+            const created = await res.json();
+
+            if (mainFile) {
+                await _uploadImageFile(`/services/${created.id}/upload-image`, mainFile);
+            }
+            for (const f of galleryFiles) {
+                await _uploadImageFile(`/services/${created.id}/upload-gallery`, f);
+            }
+
+            e.target.reset();
+            servQuill.setContents([]);
+            loadServices();
         });
 
         async function deleteService(id) {
