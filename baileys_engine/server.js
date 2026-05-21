@@ -10,7 +10,15 @@ const app = express();
 app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3001;
-const SESSION_DIR = path.join(__dirname, 'sessions');
+// SESSION_DIR is the only piece of state that must survive a redeploy.
+// Default to ./sessions (good for local dev), override with env var
+// SESSION_DIR=/data/sessions and mount that path as a Docker volume in
+// production so the WhatsApp QR pairing is not lost on every rebuild.
+const SESSION_DIR = process.env.SESSION_DIR || path.join(__dirname, 'sessions');
+if (!fs.existsSync(SESSION_DIR)) {
+    fs.mkdirSync(SESSION_DIR, { recursive: true });
+}
+console.log(`[Baileys] Session storage: ${SESSION_DIR} (set SESSION_DIR env to override; mount this path as a volume to persist QR auth across deploys)`);
 
 // Store active socket connections
 const sessions = new Map();
