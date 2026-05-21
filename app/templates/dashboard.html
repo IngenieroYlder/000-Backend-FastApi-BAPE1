@@ -387,8 +387,9 @@
                             <thead>
                                 <tr>
                                     <th style="width: 50px;">ID</th>
+                                    <th style="width: 60px;">Img</th>
                                     <th>Nombre</th>
-                                    <th style="width: 60px;"></th>
+                                    <th style="width: 180px;"></th>
                                 </tr>
                             </thead>
                             <tbody id="prodCatsTable"></tbody>
@@ -407,8 +408,9 @@
                             <thead>
                                 <tr>
                                     <th style="width: 50px;">ID</th>
+                                    <th style="width: 60px;">Img</th>
                                     <th>Nombre</th>
-                                    <th style="width: 60px;"></th>
+                                    <th style="width: 180px;"></th>
                                 </tr>
                             </thead>
                             <tbody id="servCatsTable"></tbody>
@@ -576,13 +578,32 @@
         }
 
         // --- CATEGORÍAS ---
+        function _escapeAttr(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
         function _catRow(c, kind) {
+            const safeName = _escapeAttr(c.name);
+            const deleteFn = kind === 'product' ? 'deleteProdCat' : 'deleteServCat';
             return `<tr>
                 <td>${c.id}</td>
+                <td>${_thumbHtml(c.image)}</td>
                 <td>${c.name}</td>
                 <td style="white-space:nowrap;">
-                    <button class="btn btn-secondary" onclick="editCat('${kind}', ${c.id}, ${JSON.stringify(c.name)})">✎</button>
-                    <button class="btn btn-danger" onclick="${kind === 'product' ? 'deleteProdCat' : 'deleteServCat'}(${c.id})">X</button>
+                    <button class="btn btn-secondary"
+                        data-id="${c.id}" data-kind="${kind}" data-name="${safeName}"
+                        onclick="editCat(this)">✎</button>
+                    <label class="btn btn-secondary" style="cursor:pointer;">
+                        Img
+                        <input type="file" accept="image/*" style="display:none;"
+                            onchange="uploadCatImage('${kind}', ${c.id}, this.files[0], this)">
+                    </label>
+                    <button class="btn btn-danger" onclick="${deleteFn}(${c.id})">X</button>
                 </td>
             </tr>`;
         }
@@ -600,7 +621,10 @@
             }
         }
 
-        async function editCat(kind, id, currentName) {
+        async function editCat(btn) {
+            const id = parseInt(btn.dataset.id);
+            const kind = btn.dataset.kind;
+            const currentName = btn.dataset.name || '';
             const newName = prompt('Nuevo nombre de la categoría:', currentName);
             if (!newName || newName === currentName) return;
             const path = kind === 'product' ? '/product-categories' : '/service-categories';
@@ -609,6 +633,19 @@
                 loadAllCatsList();
             } else {
                 alert('Error al renombrar la categoría');
+            }
+        }
+
+        async function uploadCatImage(kind, id, file, inputEl) {
+            if (!file) return;
+            const path = kind === 'product' ? '/product-categories' : '/service-categories';
+            const res = await _uploadImageFile(`${path}/${id}/upload-image`, file);
+            if (inputEl) inputEl.value = '';
+            if (res.ok) {
+                loadAllCatsList();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert('Error al subir imagen: ' + (data.detail || res.status));
             }
         }
 

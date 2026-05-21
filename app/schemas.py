@@ -65,6 +65,7 @@ class CategoryCreate(CategoryBase):
 
 class Category(CategoryBase):
     id: int
+    image: Optional[str] = None
     created_at: Optional[datetime] = None
 
     class Config:

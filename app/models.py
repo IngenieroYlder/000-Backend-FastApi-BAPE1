@@ -230,8 +230,9 @@ class ProductCategory(SQLModel, table=True):
     __tablename__ = "product_categories"
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
+    image: Optional[str] = None
     company_id: Optional[int] = Field(default=None, foreign_key="companies.id")
-    
+
     products: List["Product"] = Relationship(back_populates="category")
 
 class Product(SQLModel, table=True):
@@ -256,8 +257,9 @@ class ServiceCategory(SQLModel, table=True):
     __tablename__ = "service_categories"
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
+    image: Optional[str] = None
     company_id: Optional[int] = Field(default=None, foreign_key="companies.id")
-    
+
     services: List["Service"] = Relationship(back_populates="category")
 
 class Service(SQLModel, table=True):

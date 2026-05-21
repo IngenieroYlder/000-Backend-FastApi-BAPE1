@@ -1,8 +1,9 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlmodel import Session, select
 from app import models, schemas, auth
 from app.database import get_session
+from app.services.image_service import save_upload, delete_local_image
 
 router = APIRouter(
     tags=["Categories"]
@@ -46,9 +47,30 @@ def delete_product_category(category_id: int, db: Session = Depends(get_session)
     category = db.exec(stmt).first()
     if category is None:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    delete_local_image(category.image)
     db.delete(category)
     db.commit()
     return None
+
+
+@router.post("/product-categories/{category_id}/upload-image", response_model=schemas.Category)
+async def upload_product_category_image(
+    category_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    stmt = select(models.ProductCategory).where(models.ProductCategory.id == category_id).where(models.ProductCategory.company_id == current_user.company_id)
+    cat = db.exec(stmt).first()
+    if cat is None:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    new_url, _thumb = await save_upload(file, "product-categories", current_user.company_id)
+    delete_local_image(cat.image)
+    cat.image = new_url
+    db.add(cat)
+    db.commit()
+    db.refresh(cat)
+    return cat
 
 # Categorías de Servicios
 @router.post("/service-categories", response_model=schemas.Category)
@@ -88,6 +110,27 @@ def delete_service_category(category_id: int, db: Session = Depends(get_session)
     category = db.exec(stmt).first()
     if category is None:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    delete_local_image(category.image)
     db.delete(category)
     db.commit()
     return None
+
+
+@router.post("/service-categories/{category_id}/upload-image", response_model=schemas.Category)
+async def upload_service_category_image(
+    category_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    stmt = select(models.ServiceCategory).where(models.ServiceCategory.id == category_id).where(models.ServiceCategory.company_id == current_user.company_id)
+    cat = db.exec(stmt).first()
+    if cat is None:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    new_url, _thumb = await save_upload(file, "service-categories", current_user.company_id)
+    delete_local_image(cat.image)
+    cat.image = new_url
+    db.add(cat)
+    db.commit()
+    db.refresh(cat)
+    return cat

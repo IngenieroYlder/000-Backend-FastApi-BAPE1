@@ -459,7 +459,6 @@ class BufferService:
                         try:
                             # Extract Params
                             # Expected: CHECK_AVAILABILITY date='2023-10-27' time='14:00' (optional)
-                            import re
                             date_match = re.search(r"date='([^']+)'", ai_response)
                             time_match = re.search(r"time='([^']+)'", ai_response)
                             
@@ -526,7 +525,6 @@ class BufferService:
                     elif "BOOK_SLOT" in ai_response:
                         try:
                             # Expected: BOOK_SLOT date='...' time='...' email='...' name='...'
-                            import re
                             date_m = re.search(r"date='([^']+)'", ai_response)
                             time_m = re.search(r"time='([^']+)'", ai_response)
                             email_m = re.search(r"email='([^']+)'", ai_response)
