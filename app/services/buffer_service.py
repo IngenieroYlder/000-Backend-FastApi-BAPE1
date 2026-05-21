@@ -282,7 +282,6 @@ class BufferService:
                 stmt_cal = select(AppointmentConfig).where(AppointmentConfig.company_id == company_id)
                 cal_config = session.exec(stmt_cal).first()
                 if cal_config and cal_config.google_access_token:
-                    from datetime import datetime
                     dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
                     ahora = datetime.now()
                     nombre_dia = dias_semana[ahora.weekday()]
