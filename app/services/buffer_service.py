@@ -144,7 +144,32 @@ class BufferService:
                 # Fetch settings again to be fresh
                 # Fetch Contact to get summary
                 contact = session.get(Contact, contact_id)
-                
+
+                # ANTI-LOOP: if the bot has already replied many times in a short
+                # window to this contact, auto-pause to avoid bot-vs-bot ping-pong.
+                anti_loop_window = datetime.utcnow() - timedelta(seconds=60)
+                recent_bot_count = len(session.exec(
+                    select(Message)
+                    .where(Message.contact_id == contact_id)
+                    .where(Message.role == MessageRole.ASSISTANT)
+                    .where(Message.created_at >= anti_loop_window)
+                ).all())
+                if recent_bot_count >= 5:
+                    if contact and not contact.is_paused:
+                        contact.is_paused = True
+                        session.add(contact)
+                        session.commit()
+                    msg = (
+                        f"Anti-loop: {recent_bot_count} bot replies in 60s for "
+                        f"contact {contact_id}. Auto-paused."
+                    )
+                    print(f"[Buffer AI] {msg}")
+                    try:
+                        self._save_log(session, company_id, "warning", "anti-loop", msg)
+                    except Exception:
+                        pass
+                    return
+
                 # Fetch settings again to be fresh
                 stmt_settings = select(CompanySettings).where(CompanySettings.company_id == company_id)
                 company_settings = session.exec(stmt_settings).first()
