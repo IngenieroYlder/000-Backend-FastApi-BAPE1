@@ -240,6 +240,8 @@ class Product(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     description: Optional[str] = None
+    short_description: Optional[str] = None
+    long_description: Optional[str] = Field(default=None, sa_column=Column(Text))
     price: float = Field(default=0.0)
     stock: int = Field(default=0)
     image: Optional[str] = None
@@ -267,6 +269,8 @@ class Service(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     description: Optional[str] = None
+    short_description: Optional[str] = None
+    long_description: Optional[str] = Field(default=None, sa_column=Column(Text))
     price: float = Field(default=0.0)
     image: Optional[str] = None
     gallery_images: List[str] = Field(default=[], sa_column=Column(JSON))

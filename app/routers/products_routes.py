@@ -39,10 +39,14 @@ def update_product(product_id: int, product_update: schemas.ProductUpdate, db: S
     product = db.exec(stmt).first()
     if product is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    
+
+    # Apply only fields the model actually has so a schema/model drift
+    # never returns a 500 on the panel.
+    valid_fields = set(models.Product.model_fields.keys())
     for key, value in product_update.dict(exclude_unset=True).items():
-        setattr(product, key, value)
-    
+        if key in valid_fields:
+            setattr(product, key, value)
+
     db.commit()
     db.refresh(product)
     return product

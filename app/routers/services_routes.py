@@ -37,10 +37,14 @@ def update_service(service_id: int, service_update: schemas.ServiceUpdate, db: S
     service = db.exec(stmt).first()
     if service is None:
         raise HTTPException(status_code=404, detail="Servicio no encontrado")
-    
+
+    # Apply only fields the model actually has so a schema/model drift
+    # never returns a 500 on the panel.
+    valid_fields = set(models.Service.model_fields.keys())
     for key, value in service_update.dict(exclude_unset=True).items():
-        setattr(service, key, value)
-    
+        if key in valid_fields:
+            setattr(service, key, value)
+
     db.commit()
     db.refresh(service)
     return service
