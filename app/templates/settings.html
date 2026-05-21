@@ -947,7 +947,7 @@
                 
                 // 1. General Settings
                 try {
-                    const resSettings = await fetchAPI('/api/settings');
+                    const resSettings = await fetchAPI('/api/settings/');
                     if (resSettings.ok) {
                         const data = await resSettings.json();
                         console.log("General Settings data:", data);
