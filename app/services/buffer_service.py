@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import re
 from typing import Dict, List, Optional
 from app.database import engine
 from sqlmodel import Session, select
@@ -215,10 +217,14 @@ class BufferService:
                     select(Product).where(Product.company_id == company_id)
                 ).all()
 
+                # Annotate whether each item has an image so the model only
+                # offers to send pictures of items that actually have one.
                 catalog_block = ""
                 if services:
                     services_list = "\n".join(
-                        f"- {s.name}{_fmt_price(s.price)}: {_trim(s.description)}"
+                        f"- [id={s.id}] {s.name}{_fmt_price(s.price)} "
+                        f"{'[imagen disponible]' if s.image else '[sin imagen]'}: "
+                        f"{_trim(s.description)}"
                         for s in services
                     )
                     catalog_block += (
@@ -228,8 +234,10 @@ class BufferService:
                     )
                 if products:
                     products_list = "\n".join(
-                        f"- {p.name}{_fmt_price(p.price)} "
-                        f"(stock: {p.stock}): {_trim(p.description)}"
+                        f"- [id={p.id}] {p.name}{_fmt_price(p.price)} "
+                        f"(stock: {p.stock}) "
+                        f"{'[imagen disponible]' if p.image else '[sin imagen]'}: "
+                        f"{_trim(p.description)}"
                         for p in products
                     )
                     catalog_block += (
@@ -245,7 +253,24 @@ class BufferService:
                         "\n- Si el usuario pregunta por algo que no aparece en el catálogo, "
                         "responde con honestidad que no lo manejas y ofrece alternativas REALES de la lista."
                         "\n- Cita los precios y el stock exactamente como están listados."
+                        "\n\n### ENVÍO DE IMÁGENES DE CATÁLOGO:"
+                        "\n- Si el usuario pide una foto/imagen de un producto o servicio que esté"
+                        " marcado como [imagen disponible], responde ÚNICAMENTE con el comando"
+                        " (sin texto extra):"
+                        "\n  [SEND_IMAGE type=product id=N]   o   [SEND_IMAGE type=service id=N]"
+                        "\n- Reemplaza N por el id del item (lo ves entre corchetes en cada línea del catálogo)."
+                        "\n- Si el item está marcado [sin imagen], explica amablemente que aún"
+                        " no tienes foto de ese ítem."
+                        "\n- NUNCA inventes un comando con un id que no esté listado arriba."
                     )
+
+                base_instruction += (
+                    "\n\n### FORMATO DE SALIDA PARA WHATSAPP:"
+                    "\n- Para negrita usa UN solo asterisco: *texto*. NO uses Markdown con doble asterisco."
+                    "\n- Para itálica usa guion bajo: _texto_."
+                    "\n- Para tachado usa ~texto~. Para monoespaciado usa ```texto```."
+                    "\n- No uses títulos con # ni listas con -; usa viñetas con • o numeración 1) 2) 3)."
+                )
                 
                 # INJECT KNOWLEDGE BASE (RAG)
                 from app.services.rag_service import rag_service
@@ -594,35 +619,119 @@ class BufferService:
                     break
                 
                 print(f"[Buffer AI] Final Response: {final_response}")
-                
+
                 # FALLBACK FOR TECHNICAL ERRORS
                 if final_response.lower().startswith("error") or "error técnico" in final_response.lower():
                     logger.warning(f"[Buffer AI] Technical error detected. Sending fallback to user: {final_response}")
                     final_response = "Lo siento, estamos experimentando una alta demanda o un problema técnico temporal. Por favor, intenta de nuevo en unos minutos."
-                
+
+                # Detect [SEND_IMAGE type=... id=...] command from the model. If the
+                # model issued the command (alone or alongside text), look up the
+                # item, resolve its image URL and dispatch it to Baileys as an
+                # image message instead of (or in addition to) the text reply.
+                image_payload = None
+                image_caption = None
+                image_match = re.search(
+                    r"\[SEND_IMAGE\s+type=(product|service)\s+id=(\d+)\s*\]",
+                    final_response,
+                    re.IGNORECASE,
+                )
+                if image_match:
+                    item_type = image_match.group(1).lower()
+                    try:
+                        item_id = int(image_match.group(2))
+                    except ValueError:
+                        item_id = None
+
+                    item = None
+                    if item_id is not None:
+                        Model = Product if item_type == "product" else Service
+                        item = session.exec(
+                            select(Model)
+                            .where(Model.id == item_id)
+                            .where(Model.company_id == company_id)
+                        ).first()
+
+                    if item and item.image:
+                        # Build a public URL Baileys can fetch. Local uploads
+                        # (starting with /static/...) need BASE_PUBLIC_URL prefixed.
+                        image_url = item.image
+                        if image_url.startswith("/"):
+                            base = os.getenv("BASE_PUBLIC_URL", "").rstrip("/")
+                            if base:
+                                image_url = base + image_url
+                        caption_lines = [f"*{item.name}*"]
+                        if getattr(item, "price", None) is not None:
+                            try:
+                                caption_lines.append(f"${float(item.price):,.0f}")
+                            except Exception:
+                                pass
+                        if item.description:
+                            short = item.description.strip().split("\n")[0]
+                            if len(short) > 240:
+                                short = short[:237].rstrip() + "…"
+                            caption_lines.append(short)
+                        image_caption = "\n".join(caption_lines)
+                        image_payload = {"image": {"url": image_url}, "caption": image_caption}
+                        print(f"[Buffer AI] Dispatching image for {item_type} {item_id}: {image_url}")
+                    else:
+                        print(f"[Buffer AI] SEND_IMAGE command for {item_type} {item_id} but no image found.")
+
+                    # Remove the command from the textual reply either way.
+                    final_response = re.sub(
+                        r"\[SEND_IMAGE\s+type=(product|service)\s+id=\d+\s*\]",
+                        "",
+                        final_response,
+                        flags=re.IGNORECASE,
+                    ).strip()
+
+                # WhatsApp uses single-asterisk for bold; collapse any leftover
+                # Markdown-style **text** the model may have emitted despite the
+                # formatting rules above.
+                final_response = re.sub(r"\*\*([^*\n]+)\*\*", r"*\1*", final_response)
+
+                # If the model only issued the command, we still want a small
+                # confirmation message so the chat does not look broken.
+                if image_payload and not final_response:
+                    final_response = "Aquí tienes 👇"
+
                 # LOG SUCCESSFUL ACTION
                 self._save_log(session, company_id, "info", current_provider, f"🤖 Respondiendo a: '{text_content[:30]}...' -> {final_response[:50]}...")
 
-                # Save Bot Message
+                # Save Bot Message (we persist the text part; image dispatch is
+                # a side-effect logged above).
                 bot_msg = Message(
                     company_id=company_id,
                     contact_id=contact_id,
                     session_id=wa_session_id,
                     role=MessageRole.ASSISTANT,
                     content=final_response,
-                    type=MessageType.TEXT
+                    type=MessageType.IMAGE if image_payload else MessageType.TEXT,
+                    media_url=(image_payload["image"]["url"] if image_payload else None),
                 )
                 session.add(bot_msg)
                 session.commit()
-                
-                # Send via Baileys
+
+                # Send via Baileys: image first (if any), then any remaining text.
                 async with httpx.AsyncClient() as client:
-                    payload = {
-                        "session_name": session_name,
-                        "jid": remote_jid,
-                        "message": {"text": final_response}
-                    }
-                    await client.post(f"{BAILEYS_ENGINE_URL}/message/send", json=payload)
+                    if image_payload:
+                        await client.post(
+                            f"{BAILEYS_ENGINE_URL}/message/send",
+                            json={
+                                "session_name": session_name,
+                                "jid": remote_jid,
+                                "message": image_payload,
+                            },
+                        )
+                    if final_response:
+                        await client.post(
+                            f"{BAILEYS_ENGINE_URL}/message/send",
+                            json={
+                                "session_name": session_name,
+                                "jid": remote_jid,
+                                "message": {"text": final_response},
+                            },
+                        )
                 
                 # Trigger Summary Update (Fire and Forget)
                 asyncio.create_task(self._update_summary_if_needed(contact_id, company_id, current_provider, current_key))

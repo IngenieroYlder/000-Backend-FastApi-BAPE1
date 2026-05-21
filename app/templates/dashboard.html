@@ -576,22 +576,39 @@
         }
 
         // --- CATEGORÍAS ---
+        function _catRow(c, kind) {
+            return `<tr>
+                <td>${c.id}</td>
+                <td>${c.name}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn btn-secondary" onclick="editCat('${kind}', ${c.id}, ${JSON.stringify(c.name)})">✎</button>
+                    <button class="btn btn-danger" onclick="${kind === 'product' ? 'deleteProdCat' : 'deleteServCat'}(${c.id})">X</button>
+                </td>
+            </tr>`;
+        }
+
         async function loadAllCatsList() {
-            // Categorías de Productos
             const resP = await fetchAPI('/product-categories');
             if (resP.ok) {
                 const cats = await resP.json();
-                document.getElementById('prodCatsTable').innerHTML = cats.map(c => `
-                <tr><td>${c.id}</td><td>${c.name}</td><td><button class="btn btn-danger" onclick="deleteProdCat(${c.id})">X</button></td></tr>
-                    `).join('');
+                document.getElementById('prodCatsTable').innerHTML = cats.map(c => _catRow(c, 'product')).join('');
             }
-            // Categorías de Servicios
             const resS = await fetchAPI('/service-categories');
             if (resS.ok) {
                 const cats = await resS.json();
-                document.getElementById('servCatsTable').innerHTML = cats.map(c => `
-                    <tr><td>${c.id}</td><td>${c.name}</td><td><button class="btn btn-danger" onclick="deleteServCat(${c.id})">X</button></td></tr>
-                        `).join('');
+                document.getElementById('servCatsTable').innerHTML = cats.map(c => _catRow(c, 'service')).join('');
+            }
+        }
+
+        async function editCat(kind, id, currentName) {
+            const newName = prompt('Nuevo nombre de la categoría:', currentName);
+            if (!newName || newName === currentName) return;
+            const path = kind === 'product' ? '/product-categories' : '/service-categories';
+            const res = await fetchAPI(`${path}/${id}`, 'PUT', { name: newName });
+            if (res.ok) {
+                loadAllCatsList();
+            } else {
+                alert('Error al renombrar la categoría');
             }
         }
 
@@ -660,7 +677,8 @@
                         <td>${p.category_id || '-'}</td>
                         <td>$${p.price}</td>
                         <td>${p.stock}</td>
-                        <td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn btn-secondary" onclick="editProduct(${p.id})">Editar</button>
                             <label class="btn btn-secondary" style="cursor:pointer;">
                                 Imagen
                                 <input type="file" accept="image/*" style="display:none;"
@@ -738,7 +756,8 @@
                         <td title="${s.name}">${s.name}</td>
                         <td>${s.category_id || '-'}</td>
                         <td>$${s.price}</td>
-                        <td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn btn-secondary" onclick="editService(${s.id})">Editar</button>
                             <label class="btn btn-secondary" style="cursor:pointer;">
                                 Imagen
                                 <input type="file" accept="image/*" style="display:none;"
@@ -928,6 +947,97 @@
             // --- WHATSAPP FUNCTIONS REMOVED (Moved to /channels) ---
         }
         
+        // ============================================================
+        // EDIT MODAL (shared for products & services)
+        // ============================================================
+        const editModal = document.createElement('div');
+        editModal.id = 'editModal';
+        editModal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+        editModal.innerHTML = `
+            <div style="background:white;padding:24px;border-radius:12px;max-width:560px;width:90%;max-height:90vh;overflow-y:auto;">
+                <h3 id="editModalTitle" style="margin-top:0;">Editar</h3>
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <input type="hidden" id="editKind">
+                    <div class="form-row">
+                        <input type="text" id="editName" placeholder="Nombre" required>
+                        <input type="number" id="editPrice" placeholder="Precio" step="0.01" required>
+                    </div>
+                    <div class="form-row" id="editStockRow">
+                        <input type="number" id="editStock" placeholder="Stock">
+                    </div>
+                    <div class="form-row">
+                        <select id="editCategory"><option value="">Sin categoría...</option></select>
+                    </div>
+                    <input type="text" id="editShortDesc" placeholder="Descripción Corta" style="width:100%;margin-top:8px;">
+                    <label style="display:block;margin-top:12px;font-size:13px;color:#666;">Descripción larga:</label>
+                    <textarea id="editLongDesc" rows="4" style="width:100%;"></textarea>
+                    <div style="text-align:right;margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>`;
+        document.body.appendChild(editModal);
+
+        function closeEditModal() { editModal.style.display = 'none'; }
+
+        async function openEdit(kind, id) {
+            const path = kind === 'product' ? '/products' : '/services';
+            const res = await fetchAPI(`${path}/${id}`);
+            if (!res.ok) { alert('No se pudo cargar el ítem'); return; }
+            const item = await res.json();
+
+            document.getElementById('editModalTitle').textContent = kind === 'product' ? 'Editar Producto' : 'Editar Servicio';
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editKind').value = kind;
+            document.getElementById('editName').value = item.name || '';
+            document.getElementById('editPrice').value = item.price ?? '';
+            document.getElementById('editStock').value = item.stock ?? '';
+            document.getElementById('editStockRow').style.display = kind === 'product' ? 'flex' : 'none';
+            document.getElementById('editShortDesc').value = item.short_description || item.description || '';
+            document.getElementById('editLongDesc').value = item.long_description || '';
+
+            // Load matching categories into select
+            const catPath = kind === 'product' ? '/product-categories' : '/service-categories';
+            const catRes = await fetchAPI(catPath);
+            const cats = catRes.ok ? await catRes.json() : [];
+            document.getElementById('editCategory').innerHTML =
+                '<option value="">Sin categoría...</option>' +
+                cats.map(c => `<option value="${c.id}" ${c.id === item.category_id ? 'selected' : ''}>${c.name}</option>`).join('');
+
+            editModal.style.display = 'flex';
+        }
+
+        function editProduct(id) { openEdit('product', id); }
+        function editService(id) { openEdit('service', id); }
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const kind = document.getElementById('editKind').value;
+            const data = {
+                name: document.getElementById('editName').value,
+                price: parseFloat(document.getElementById('editPrice').value),
+                category_id: parseInt(document.getElementById('editCategory').value) || null,
+                short_description: document.getElementById('editShortDesc').value,
+                long_description: document.getElementById('editLongDesc').value,
+            };
+            data.description = data.short_description;
+            if (kind === 'product') {
+                const stockVal = document.getElementById('editStock').value;
+                if (stockVal !== '') data.stock = parseInt(stockVal);
+            }
+            const path = kind === 'product' ? '/products' : '/services';
+            const res = await fetchAPI(`${path}/${id}`, 'PUT', data);
+            if (res.ok) {
+                closeEditModal();
+                kind === 'product' ? loadProducts() : loadServices();
+            } else {
+                alert('Error al guardar cambios');
+            }
+        });
+
         // Carga Inicial
         loadProducts();
         // Check URL params for section

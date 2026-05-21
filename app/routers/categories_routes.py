@@ -27,6 +27,19 @@ def read_product_categories(skip: int = 0, limit: int = 100, db: Session = Depen
     stmt = select(models.ProductCategory).where(models.ProductCategory.company_id == current_user.company_id).offset(skip).limit(limit)
     return db.exec(stmt).all()
 
+@router.put("/product-categories/{category_id}", response_model=schemas.Category)
+def update_product_category(category_id: int, category: schemas.CategoryCreate, db: Session = Depends(get_session), current_user: models.User = Depends(auth.get_current_user)):
+    stmt = select(models.ProductCategory).where(models.ProductCategory.id == category_id).where(models.ProductCategory.company_id == current_user.company_id)
+    db_cat = db.exec(stmt).first()
+    if db_cat is None:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    db_cat.name = category.name
+    db.add(db_cat)
+    db.commit()
+    db.refresh(db_cat)
+    return db_cat
+
+
 @router.delete("/product-categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_product_category(category_id: int, db: Session = Depends(get_session), current_user: models.User = Depends(auth.get_current_user)):
     stmt = select(models.ProductCategory).where(models.ProductCategory.id == category_id).where(models.ProductCategory.company_id == current_user.company_id)
@@ -55,6 +68,19 @@ def create_service_category(category: schemas.CategoryCreate, db: Session = Depe
 def read_service_categories(skip: int = 0, limit: int = 100, db: Session = Depends(get_session), current_user: models.User = Depends(auth.get_current_user)):
     stmt = select(models.ServiceCategory).where(models.ServiceCategory.company_id == current_user.company_id).offset(skip).limit(limit)
     return db.exec(stmt).all()
+
+@router.put("/service-categories/{category_id}", response_model=schemas.Category)
+def update_service_category(category_id: int, category: schemas.CategoryCreate, db: Session = Depends(get_session), current_user: models.User = Depends(auth.get_current_user)):
+    stmt = select(models.ServiceCategory).where(models.ServiceCategory.id == category_id).where(models.ServiceCategory.company_id == current_user.company_id)
+    db_cat = db.exec(stmt).first()
+    if db_cat is None:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    db_cat.name = category.name
+    db.add(db_cat)
+    db.commit()
+    db.refresh(db_cat)
+    return db_cat
+
 
 @router.delete("/service-categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_service_category(category_id: int, db: Session = Depends(get_session), current_user: models.User = Depends(auth.get_current_user)):
