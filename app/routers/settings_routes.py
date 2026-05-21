@@ -30,41 +30,70 @@ def get_settings(db: Session = Depends(get_session), current_user: models.User =
 
 @router.post("/update")
 def update_settings(
-    settings_update: schemas.CompanySettingsUpdate, 
-    db: Session = Depends(get_session), 
+    settings_update: schemas.CompanySettingsUpdate,
+    db: Session = Depends(get_session),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    print(f"[Settings] Updating settings for company {current_user.company_id}...")
-    stmt = select(models.CompanySettings).where(models.CompanySettings.company_id == current_user.company_id)
-    settings = db.exec(stmt).first()
-    if not settings:
-        print(f"[Settings] No existing settings found for company {current_user.company_id}. Creating new.")
-        settings = models.CompanySettings(company_id=current_user.company_id)
-        db.add(settings)
-        db.commit()
-        db.refresh(settings)
-    
-    # Update fields
-    settings_data = settings_update.dict(exclude_unset=True)
-    print(f"[Settings] Keys to update: {list(settings_data.keys())}")
-    for key, value in settings_data.items():
-        if isinstance(value, str) and "api_key" in key:
-            value = value.strip()
-        setattr(settings, key, value)
-        
-    db.add(settings)
+    company_id = current_user.company_id
+    if not company_id:
+        raise HTTPException(status_code=400, detail="User has no company assigned")
+
+    print(f"[Settings] Updating settings for company {company_id}...")
+
+    # Pydantic v2 native dump; falls back to .dict() if v1
+    if hasattr(settings_update, "model_dump"):
+        settings_data = settings_update.model_dump(exclude_unset=True)
+    else:
+        settings_data = settings_update.dict(exclude_unset=True)
+
+    # Normalize api keys (strip whitespace), keep empty strings as empty (do NOT collapse to None)
+    for k, v in list(settings_data.items()):
+        if isinstance(v, str) and "api_key" in k:
+            settings_data[k] = v.strip()
+
+    print(f"[Settings] Payload keys: {list(settings_data.keys())}")
+    # Safe preview (no full secrets)
+    preview = {
+        k: (v[:8] + "..." if isinstance(v, str) and ("api_key" in k or "token" in k or "password" in k) and v else v)
+        for k, v in settings_data.items()
+    }
+    print(f"[Settings] Payload preview: {preview}")
+
+    stmt = select(models.CompanySettings).where(models.CompanySettings.company_id == company_id)
+    settings_obj = db.exec(stmt).first()
+    if not settings_obj:
+        print(f"[Settings] No existing settings row for company {company_id}. Creating.")
+        settings_obj = models.CompanySettings(company_id=company_id, **settings_data)
+        db.add(settings_obj)
+    else:
+        for key, value in settings_data.items():
+            setattr(settings_obj, key, value)
+        db.add(settings_obj)
+
     db.commit()
-    db.refresh(settings)
-    
-    # Log the update
+    db.refresh(settings_obj)
+
+    # Verify persistence by reading back the key fields requested in the payload
+    verify_stmt = select(models.CompanySettings).where(models.CompanySettings.company_id == company_id)
+    verify_obj = db.exec(verify_stmt).first()
+    persisted_preview = {}
+    for k in settings_data.keys():
+        val = getattr(verify_obj, k, None)
+        if isinstance(val, str) and ("api_key" in k or "token" in k or "password" in k):
+            persisted_preview[k] = (val[:8] + "...") if val else ""
+        else:
+            persisted_preview[k] = val
+    print(f"[Settings] Persisted preview: {persisted_preview}")
+
+    # Log the update (best-effort, never breaks the save)
     try:
         from app.services.buffer_service import buffer_service
-        buffer_service._save_log(db, current_user.company_id, "info", "Ajustes", f"⚙️ Configuración guardada: {', '.join(settings_data.keys())}")
+        buffer_service._save_log(db, company_id, "info", "Ajustes", f"⚙️ Configuración guardada: {', '.join(settings_data.keys())}")
     except Exception as e:
         print(f"[Settings] Failed to log update: {e}")
 
     print("[Settings] Update successful.")
-    return settings
+    return verify_obj
 
 @router.post("/upload/branding")
 async def upload_branding(

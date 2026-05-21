@@ -48,28 +48,33 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     except JWTError:
         raise credentials_exception
 
+    # Look up the user (with a small timeout safety net for a stuck DB)
     try:
-        # Emergency Timeout Bypass for Deadlocked DB
         def _get_user_sync():
-             return db.query(models.User).filter(models.User.email == token_data.email).first()
-        
+            return db.query(models.User).filter(models.User.email == token_data.email).first()
+
         user = await asyncio.wait_for(asyncio.to_thread(_get_user_sync), timeout=2.0)
-        
-        if user is None:
-            raise credentials_exception
-        return user
-    except (asyncio.TimeoutError, Exception) as e:
-        logger.warning(f"Empic Database error or timeout in Auth: {e}. Falling back to Emergency User.")
-        # Only fallback if it's the known admin email to be safe
-        if token_data.email in ["admin@admin.com", "ylder@gmail.com"]:
-             # Construct a mock user object
-             mock_user = models.User(
-                 id=1, 
-                 email=token_data.email, 
-                 full_name="Admin Emergency", 
-                 company_id=1,
-                 role="admin",
-                 is_active=True
-             )
-             return mock_user
+    except asyncio.TimeoutError:
+        logger.warning(f"Auth DB timeout for {token_data.email}. Falling back to emergency user if admin.")
+        user = None
+    except Exception as e:
+        logger.error(f"Auth DB error for {token_data.email}: {e}")
         raise credentials_exception
+
+    if user is not None:
+        return user
+
+    # Emergency fallback ONLY for hardcoded admin emails, ONLY on DB timeout
+    if token_data.email in ["admin@admin.com", "ylder@gmail.com"]:
+        mock_user = models.User(
+            id=1,
+            email=token_data.email,
+            password_hash="",
+            first_name="Admin",
+            last_name="Emergency",
+            company_id=1,
+            role=models.UserRole.ADMIN,
+            is_active=True,
+        )
+        return mock_user
+    raise credentials_exception
